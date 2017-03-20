@@ -2,6 +2,8 @@ import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
 from random import Random
+from tensorflow.contrib import rnn
+from tensorflow.python.framework import ops
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -11,7 +13,7 @@ tf.app.flags.DEFINE_boolean('use_bn', True, 'use batch normalization. otherwise 
 tf.app.flags.DEFINE_integer('batch_size', 10, 'use batch normalization. otherwise use biases')
 FLAGS = tf.flags.FLAGS
 
-
+#holds FLAGS and other variables that are used in different files
 class Config:
 	def __init__(self):
 		global FLAGS
@@ -29,27 +31,30 @@ class Config:
 		print("learning_rate" +" : "+ str(self.learning_rate))
 		print("decay" +" : "+ str(self.decay))
 
-utility = Utility()
+    #self.random = Random(FLAGS.python_seed)
+
+config = Config()
 
 print("batch_size : "+ str(FLAGS.batch_size))
-# model training
-mnist = input_data.read_data_sets("data", one_hot=True)
-sess = tf.InteractiveSession()
 
-image = tf.placeholder(tf.float32, [None, 784])
-label = tf.placeholder(tf.float32, [utility.FLAGS.batch_size, 10])
 
-"""
-label_predict = model(image)
+# configuration
+#                        O * W + b -> 10 labels for each image, O[? 28], W[28 10], B[10]
+#                       ^ (O: output 28 vec from 28 vec input)
+#                       |
+#      +-+  +-+       +--+
+#      |1|->|2|-> ... |28| time_step_size = 28
+#      +-+  +-+       +--+
+#       ^    ^    ...  ^
+#       |    |         |
+# img1:[28] [28]  ... [28]
+# img2:[28] [28]  ... [28]
+# img3:[28] [28]  ... [28]
+# ...
+# img128 or img256 (batch_size or test_size 256)
+#      each input size = input_vec_size=lstm_size=28
 
-cross_entropy = -tf.reduce_sum(label * tf.log(label_predict))
-train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
-
-correct_prediction = tf.equal(tf.arg_max(label_predict, 1), tf.arg_max(label, 1))
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-
-sess.run(tf.initialize_all_variables())
-"""
+# configuration variables
 
 
 input_vec_size = lstm_size = 28
@@ -88,6 +93,7 @@ trX = trX.reshape(-1, 28, 28)
 teX = teX.reshape(-1, 28, 28)
 
 
+
 def run_with_config(Config, trX, trY, teX, teY):
 	Config.print_config()
 	ops.reset_default_graph()
@@ -124,3 +130,12 @@ def run_with_config(Config, trX, trY, teX, teY):
 
 	        print(i, np.mean(np.argmax(teY[test_indices], axis=1) ==
 	                         sess.run(predict_op, feed_dict={X: teX[test_indices]})))
+
+#run_with_config(1, trX, trY, teX, teY)
+
+for learning_rate in [0.0001, 0.002]: #1, 0.0025, 0.002]:  # [0.01, 0.007, 0.001, 0.0007, 0.0001]:
+    for decay in [0.9]: #[0.005, 0.01]:
+    	config = Config()
+    	config.learning_rate = learning_rate
+    	config.decay = decay
+       	run_with_config(config, trX, trY, teX, teY)
