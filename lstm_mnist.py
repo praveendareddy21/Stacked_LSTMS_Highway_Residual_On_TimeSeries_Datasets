@@ -1,10 +1,9 @@
 import tensorflow as tf
-from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
 from random import Random
 from tensorflow.contrib import rnn
 from tensorflow.python.framework import ops
-
+from mnist_data_handler import get_mnist_data
 
 
 
@@ -58,16 +57,16 @@ def model(X, W, B, lstm_size):
     return tf.matmul(outputs[-1], W) + B, lstm.state_size # State size to initialize the stat
 
 
-mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
-trX, trY, teX, teY = mnist.train.images, mnist.train.labels, mnist.test.images, mnist.test.labels
-trX = trX.reshape(-1, 28, 28)
-teX = teX.reshape(-1, 28, 28)
 
 
 
-def run_with_config(Config):#, trX, trY, teX, teY):
+
+def run_with_config(Config):#, :
 	Config.print_config()
 	ops.reset_default_graph()
+
+	(trX, trY, teX, teY) = get_mnist_data();
+
 	with tf.device("/cpu:0"):  # Remove this line to use GPU. If you have a too small GPU, it crashes.
 		X = tf.placeholder("float", [None, 28, 28])
 		Y = tf.placeholder("float", [None, 10])
