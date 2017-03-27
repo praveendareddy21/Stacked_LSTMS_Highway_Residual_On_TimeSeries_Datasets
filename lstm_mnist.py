@@ -2,7 +2,6 @@ import tensorflow as tf
 import numpy as np
 from random import Random
 from tensorflow.contrib import rnn
-from tensorflow.python.framework import ops
 from mnist_data_handler import get_mnist_data
 
 
@@ -24,8 +23,9 @@ from mnist_data_handler import get_mnist_data
 # img128 or img256 (batch_size or test_size 256)
 #      each input size = input_vec_size=lstm_size=28
 
-# configuration variables
 
+
+############################## model definition ######################################
 
 input_vec_size = lstm_size = 28
 time_step_size = 28
@@ -58,14 +58,15 @@ def model(X, W, B, lstm_size):
 
 
 
+############################## model definition end ######################################
 
 
 
 def run_with_config(Config):#, :
 	Config.print_config()
-	ops.reset_default_graph()
+	tf.reset_default_graph()    ## enables re-running of graph with different config
 
-	(trX, trY, teX, teY) = get_mnist_data();
+	(trX, trY, teX, teY) = get_mnist_data(); ## dataset loading
 
 	with tf.device("/cpu:0"):  # Remove this line to use GPU. If you have a too small GPU, it crashes.
 		X = tf.placeholder("float", [None, 28, 28])
@@ -95,16 +96,12 @@ def run_with_config(Config):#, :
 	        for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trX)+1, batch_size)):
 	            sess.run(train_op, feed_dict={X: trX[start:end], Y: trY[start:end]})
 
-	        test_indices = np.arange(len(teX))  # Get A Test Batch
-	        #np.random.shuffle(test_indices)
-	        #test_indices = test_indices[0:test_size]
 
+			#testing from here
+	        test_indices = np.arange(len(teX))  # Get A Test Batch
 	        run_result = sess.run(predict_op, feed_dict={X: teX[test_indices]}  )
-	        print(run_result)
 	        res = np.argmax(teY[test_indices], axis=1) == run_result
-	        #print(res)
 	        print(i, np.mean(res))
 
-#run_with_config(1, trX, trY, teX, teY)
 
 
