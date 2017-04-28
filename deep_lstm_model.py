@@ -3,7 +3,7 @@ import tensorflow as tf
 from sklearn import metrics
 from sklearn.utils import shuffle
 import numpy as np
-from main_runner import Config
+from base_config import Config
 
 def one_hot(y):
     """convert label from dense to one hot

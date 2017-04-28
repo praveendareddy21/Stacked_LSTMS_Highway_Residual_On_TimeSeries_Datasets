@@ -3,6 +3,9 @@ import tensorflow as tf
 from sklearn import metrics
 from sklearn.utils import shuffle
 import numpy as np
+from  base_config import Config
+
+
 
 def single_LSTM_cell(input_hidden_tensor, n_outputs):
     """ define the basic LSTM layer
@@ -41,15 +44,9 @@ def LSTM_Network(feature_mat, config):
     feature_mat = tf.reshape(feature_mat, [-1, config.n_inputs])
     # New feature_mat's shape: [time_steps*batch_size, n_inputs]
 
-    # Linear activation, reshaping inputs to the LSTM's number of hidden:
-    hidden = tf.nn.relu(
-        tf.matmul(feature_mat, config.W['hidden'])
-        + config.biases['hidden'])
-    # New feature_mat (hidden) shape: [time_steps*batch_size, n_hidden]
-
     # Split the series because the rnn cell needs time_steps features, each of shape:
-    hidden = tf.split(axis=0, num_or_size_splits=config.n_steps, value=hidden)
-    # New hidden's shape: a list of lenght "time_step" containing tensors of shape [batch_size, n_hidden]
+    hidden = tf.split(axis=0, num_or_size_splits=config.n_steps, value=feature_mat)
+    print (len(hidden), str(hidden[0].get_shape()))
 
     outputs = single_LSTM_cell(hidden, config.n_hidden)
 
@@ -63,165 +60,116 @@ def LSTM_Network(feature_mat, config):
 
 
 
+################################## load data and config ##################################
+
+X_train, y_train, X_test, y_test = get_HAR_data()
+
+
+class SingleLayerConfig(object):
+    """
+    define a class to store parameters,
+    the input should be feature mat of training and testing
+    """
+
+    def __init__(self):
+        super(SingleLayerConfig, self).__init__()
+        # Input data
+        self.train_count = len(X_train)  # 7352 training series
+        self.test_data_count = len(X_test)  # 2947 testing series
+        self.n_steps = len(X_train[0])  # 128 time_steps per series
+
+        # Trainging
+        self.learning_rate = 0.0025
+        self.lambda_loss_amount = 0.0015
+        self.training_epochs = 300
+        self.batch_size = 1500
+
+        # LSTM structure
+        self.n_inputs = len(X_train[0][0])  # == 9 Features count is of 9: three 3D sensors features over time
+        self.n_hidden = 32  # nb of neurons inside the neural network
+        self.n_classes = 6  # Final output classes
+
+        self.logs_path = '/tmp/various_LSTMS/single_layer/'
+
+
+#config = Config(X_train, X_test)
+config = SingleLayerConfig()
+
+
 def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     tf.reset_default_graph()  # To enable to run multiple things in a loop
+
+    config.W = {
+        'hidden': tf.Variable(tf.random_normal([config.n_inputs, config.n_hidden])),
+        'output': tf.Variable(tf.random_normal([config.n_hidden, config.n_classes]))
+    }
+    config.biases = {
+        'hidden': tf.Variable(tf.random_normal([config.n_hidden], mean=1.0)),
+        'output': tf.Variable(tf.random_normal([config.n_classes]))
+    }
 
     #-----------------------------------
     # Define parameters for model
     #-----------------------------------
 
-    X_train, y_train, X_test, y_test = get_HAR_data()
-    #config = Config(X_train, X_test)
-    config.n_inputs = len(X_train[0][0])
+
     print("Some useful info to get an insight on dataset's shape and normalisation:")
     print("features shape, labels shape, each features mean, each features standard deviation")
     print(X_test.shape, y_test.shape,
           np.mean(X_test), np.std(X_test))
     print("the dataset is therefore properly normalised, as expected.")
 
-    #------------------------------------------------------
-    # Let's get serious and build the neural network
-    #------------------------------------------------------
-    with tf.device("/cpu:0"):  # Remove this line to use GPU. If you have a too small GPU, it crashes.
-        X = tf.placeholder(tf.float32, [
-                           None, config.n_steps, config.n_inputs], name="X")
-        Y = tf.placeholder(tf.float32, [
-                           None, config.n_classes], name="Y")
+    # ------------------------------------------------------
+    # step3: Let's get serious and build the neural network
+    # ------------------------------------------------------
+    X = tf.placeholder(tf.float32, [None, config.n_steps, config.n_inputs])
+    Y = tf.placeholder(tf.float32, [None, config.n_classes])
 
-        # is_train for dropout control:
-        is_train = tf.placeholder(tf.bool, name="is_train")
-        keep_prob_for_dropout = tf.cond(is_train,
-            lambda: tf.constant(
-                config.keep_prob_for_dropout,
-                name="keep_prob_for_dropout"
-            ),
-            lambda: tf.constant(
-                1.0,
-                name="keep_prob_for_dropout"
-            )
-        )
+    # pred_Y = LSTM_Network(X, config)
+    pred_Y = LSTM_Network(X, config)
 
-        pred_y = LSTM_Network(X, config)
+    print "Unregularised variables:"
+    for unreg in [tf_var.name for tf_var in tf.trainable_variables() if
+                  ("noreg" in tf_var.name or "Bias" in tf_var.name)]:
+        print unreg
 
-        # Loss, optimizer, evaluation
+    # Loss,optimizer,evaluation
+    l2 = config.lambda_loss_amount * \
+         sum(tf.nn.l2_loss(tf_var) for tf_var in tf.trainable_variables())
+    # Softmax loss and L2
+    cost = tf.reduce_mean(
+        tf.nn.softmax_cross_entropy_with_logits(logits=pred_Y, labels=Y)) + l2
+    optimizer = tf.train.AdamOptimizer(
+        learning_rate=config.learning_rate).minimize(cost)
 
-        # Softmax loss with L2 and L1 layer-wise regularisation
-        print "Unregularised variables:"
-        for unreg in [tf_var.name for tf_var in tf.trainable_variables() if ("noreg" in tf_var.name or "Bias" in tf_var.name)]:
-            print unreg
-        l2 = config.lambda_loss_amount * sum(
-            tf.nn.l2_loss(tf_var)
-                for tf_var in tf.trainable_variables()
-                if not ("noreg" in tf_var.name or "Bias" in tf_var.name)
-        )
-        # first_weights = [w for w in tf.all_variables() if w.name == 'LSTM_network/layer_1/pass_forward/relu_fc_weights:0'][0]
-        # l1 = config.lambda_loss_amount * tf.reduce_mean(tf.abs(first_weights))
-        loss = tf.reduce_mean(
-            tf.nn.softmax_cross_entropy_with_logits(logits=pred_y, labels=Y)) + l2  # + l1
+    correct_pred = tf.equal(tf.argmax(pred_Y, 1), tf.argmax(Y, 1))
+    accuracy = tf.reduce_mean(tf.cast(correct_pred, dtype=tf.float32))
 
-        # Gradient clipping Adam optimizer with gradient noise
-        optimize = tf.contrib.layers.optimize_loss(
-            loss,
-            global_step=tf.Variable(0),
-            learning_rate=config.learning_rate,
-            optimizer=tf.train.AdamOptimizer(learning_rate=config.learning_rate),
-            clip_gradients=config.clip_gradients,
-            gradient_noise_scale=config.gradient_noise_scale
-        )
+    # --------------------------------------------
+    # step4: Hooray, now train the neural network
+    # --------------------------------------------
+    # Note that log_device_placement can be turned ON but will cause console spam.
+    sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=False))
+    tf.global_variables_initializer().run()
 
-        correct_pred = tf.equal(tf.argmax(pred_y, 1), tf.argmax(Y, 1))
-        accuracy = tf.reduce_mean(tf.cast(correct_pred, dtype=tf.float32))
+    best_accuracy = 0.0
+    # Start training for each batch and loop epochs
+    for i in range(config.training_epochs):
+        for start, end in zip(range(0, config.train_count, config.batch_size),
+                              range(config.batch_size, config.train_count + 1, config.batch_size)):
+            sess.run(optimizer, feed_dict={X: X_train[start:end],
+                                           Y: y_train[start:end]})
 
-    #--------------------------------------------
-    # Hooray, now train the neural network
-    #--------------------------------------------
-    # Note that log_device_placement can be turned of for less console spam.
+        # Test completely at every epoch: calculate accuracy
+        pred_out, accuracy_out, loss_out = sess.run([pred_Y, accuracy, cost], feed_dict={
+            X: X_test, Y: y_test})
+        print("traing iter: {},".format(i) + \
+              " test accuracy : {},".format(accuracy_out) + \
+              " loss : {}".format(loss_out))
+        best_accuracy = max(best_accuracy, accuracy_out)
 
-    sessconfig = tf.ConfigProto(log_device_placement=False)
-    with tf.Session(config=sessconfig) as sess:
-        tf.global_variables_initializer().run()
+    print("")
+    print("final test accuracy: {}".format(accuracy_out))
+    print("best epoch's test accuracy: {}".format(best_accuracy))
+    print("")
 
-        best_accuracy = (0.0, "iter: -1")
-        best_f1_score = (0.0, "iter: -1")
-
-        # Start training for each batch and loop epochs
-
-        worst_batches = []
-
-        for i in range(config.training_epochs):
-
-            # Loop batches for an epoch:
-            shuffled_X, shuffled_y = shuffle(X_train, y_train, random_state=i*42)
-            for start, end in zip(range(0, config.train_count, config.batch_size),
-                                  range(config.batch_size, config.train_count + 1, config.batch_size)):
-
-                _, train_acc, train_loss, train_pred = sess.run(
-                    [optimize, accuracy, loss, pred_y],
-                    feed_dict={
-                        X: shuffled_X[start:end],
-                        Y: shuffled_y[start:end],
-                        is_train: True
-                    }
-                )
-
-                worst_batches.append(
-                    (train_loss, shuffled_X[start:end], shuffled_y[start:end])
-                )
-                worst_batches = list(sorted(worst_batches))[-5:]  # Keep 5 poorest
-
-            # Train F1 score is not on boosting
-            train_f1_score = metrics.f1_score(
-                shuffled_y[start:end].argmax(1), train_pred.argmax(1), average="weighted"
-            )
-
-            # Retrain on top worst batches of this epoch (boosting):
-            # a.k.a. "focus on the hardest exercises while training":
-            for _, x_, y_ in worst_batches:
-
-                _, train_acc, train_loss, train_pred = sess.run(
-                    [optimize, accuracy, loss, pred_y],
-                    feed_dict={
-                        X: x_,
-                        Y: y_,
-                        is_train: True
-                    }
-                )
-
-            # Test completely at the end of every epoch:
-            # Calculate accuracy and F1 score
-            pred_out, accuracy_out, loss_out = sess.run(
-                [pred_y, accuracy, loss],
-                feed_dict={
-                    X: X_test,
-                    Y: y_test,
-                    is_train: False
-                }
-            )
-
-            # "y_test.argmax(1)": could be optimised by being computed once...
-            f1_score_out = metrics.f1_score(
-                y_test.argmax(1), pred_out.argmax(1), average="weighted"
-            )
-
-            print (
-                "iter: {}, ".format(i) + \
-                "train loss: {}, ".format(train_loss) + \
-                "train accuracy: {}, ".format(train_acc) + \
-                "train F1-score: {}, ".format(train_f1_score) + \
-                "test loss: {}, ".format(loss_out) + \
-                "test accuracy: {}, ".format(accuracy_out) + \
-                "test F1-score: {}".format(f1_score_out)
-            )
-
-            best_accuracy = max(best_accuracy, (accuracy_out, "iter: {}".format(i)))
-            best_f1_score = max(best_f1_score, (f1_score_out, "iter: {}".format(i)))
-
-        print("")
-        print("final test accuracy: {}".format(accuracy_out))
-        print("best epoch's test accuracy: {}".format(best_accuracy))
-        print("final F1 score: {}".format(f1_score_out))
-        print("best epoch's F1 score: {}".format(best_f1_score))
-        print("")
-
-    # returning both final and bests accuracies and f1 scores.
-    return accuracy_out, best_accuracy, f1_score_out, best_f1_score
