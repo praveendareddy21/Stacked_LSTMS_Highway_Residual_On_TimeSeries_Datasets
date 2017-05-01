@@ -81,7 +81,7 @@ def sample_batch(X_train,y_train,batch_size):
 
 
 """Load the data"""
-ratio = np.array([0.8,0.9]) #Ratios where to split the training and validation set
+ratio = np.array([0.8,0.8]) #Ratios where to split the training and validation set, # no validation setting
 #X_train,X_val,X_test,y_train,y_val,y_test = load_data(direc,ratio,dataset='CBF')
 #X_train,X_val,X_test,y_train,y_val,y_test = load_data(direc,ratio,dataset='synthetic_control')
 
