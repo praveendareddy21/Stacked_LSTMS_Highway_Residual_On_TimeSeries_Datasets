@@ -13,6 +13,7 @@ import bi_dir_residual_lstm_HAR
 import deep_lstm_model
 import single_layer_lstm
 import deep_lstm_model_with_BN
+import deep_lstm_model_on_ucr_dataset
 
 
 
@@ -21,11 +22,11 @@ if __name__ == '__main__':
 	#run_with_config = single_layer_lstm.run_with_config
 	#config = single_layer_lstm.config
 
-	run_with_config = deep_lstm_model.run_with_config
-	config = deep_lstm_model.config
+	#run_with_config = deep_lstm_model.run_with_config
+	#config = deep_lstm_model.config
 
-	run_with_config = deep_lstm_model_with_BN.run_with_config
-	config = deep_lstm_model_with_BN.config
+	run_with_config = deep_lstm_model_on_ucr_dataset.run_with_config
+	config = deep_lstm_model_on_ucr_dataset.config
 
 
 
