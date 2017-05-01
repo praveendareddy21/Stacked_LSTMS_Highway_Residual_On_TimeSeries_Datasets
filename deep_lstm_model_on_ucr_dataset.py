@@ -136,7 +136,7 @@ def deep_LSTM_network(feature_mat, config, keep_prob_for_dropout):
 
 ################################## load data and config ##################################
 
-X_train, y_train, X_test, y_test, series_size = get_dataset_with_series_size(dataset='synthetic_control')
+X_train, y_train, X_test, y_test, series_size = get_dataset_with_series_size(dataset='CBF')
 X_train = X_train.reshape((-1, series_size, 1))
 X_test = X_test.reshape((-1, series_size, 1))
 y_train = y_train.reshape((-1, 1))
@@ -159,8 +159,8 @@ class HARConfig(Config):
 
         # LSTM structure
         self.n_inputs = 1  # == 9 Features count is of 9: three 3D sensors features over time
-        self.n_hidden = 32  # nb of neurons inside the neural network
-        self.n_classes = 6  # Final output classes
+        self.n_hidden = 12 # nb of neurons inside the neural network
+        self.n_classes = len(y_train[0])  # Final output classes
         self.W = {
             'hidden': tf.Variable(tf.random_normal([self.n_inputs, self.n_hidden])),
             'output': tf.Variable(tf.random_normal([self.n_hidden, self.n_classes]))
