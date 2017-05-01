@@ -18,13 +18,13 @@ class SlidingWindowGenerator(object):
 
 	def runSlidingWindow(self, max_dataset_size = 0 ):
 		output = []
-		range_len = len(X) - self.window_size
+		range_len = len(self.data) - self.window_size
 		if(max_dataset_size != 0 and range_len  >= max_dataset_size -1):
 			range_len = max_dataset_size - 1
 		for i in range(range_len+1):
-			output.append(X[i: i+self.window_size])
+			output.append(self.data[i: i+self.window_size])
 		return output
 
 if __name__ == '__main__':
 	X = np.array([0, 1, 7, 3, 4,])
-	print (SlidingWindowGenerator(X, window_size=3).runSlidingWindow(max_dataset_size = 1))
+	print (SlidingWindowGenerator(X, window_size=3).runSlidingWindow(max_dataset_size = 2))
