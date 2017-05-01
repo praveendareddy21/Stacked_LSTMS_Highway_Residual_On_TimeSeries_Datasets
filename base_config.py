@@ -23,12 +23,23 @@ class Config(object):
 		self.np_data_type["float"] = np.float32
 		self.learning_rate = 0.001
 		self.decay = 0.9
+		self.batch_norm_enabled = False
+		self.n_stacked_layers = 1
+		self.training_epochs = 300
+		self.batch_size = 1500
+
 
 	def print_config(self):
+		print("#####")
 		print("learning_rate" +" : "+ str(self.learning_rate))
 		print("decay" +" : "+ str(self.decay))
+		print("batch_norm" + " : " + str(self.batch_norm_enabled))
+		print("n_stacked_layers" + " : " + str(self.n_stacked_layers))
+		print("training_epochs" + " : " + str(self.training_epochs))
+		print("batch_size" + " : " + str(self.batch_size))
 
-    #self.random = Random(FLAGS.python_seed)
+
+		#self.random = Random(FLAGS.python_seed)
 
 
 
