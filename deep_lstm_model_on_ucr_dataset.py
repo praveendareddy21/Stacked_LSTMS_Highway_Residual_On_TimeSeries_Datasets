@@ -136,7 +136,7 @@ def deep_LSTM_network(feature_mat, config, keep_prob_for_dropout):
 
 ################################## load data and config ##################################
 
-X_train, y_train, X_test, y_test, series_size = get_dataset_with_series_size(dataset='CBF')
+X_train, y_train, X_test, y_test, series_size = get_dataset_with_series_size(dataset='ElectricDevices')
 X_train = X_train.reshape((-1, series_size, 1))
 X_test = X_test.reshape((-1, series_size, 1))
 y_train = y_train.reshape((-1, 1))
@@ -159,7 +159,7 @@ class HARConfig(Config):
 
         # LSTM structure
         self.n_inputs = 1  # == 9 Features count is of 9: three 3D sensors features over time
-        self.n_hidden = 12 # nb of neurons inside the neural network
+        self.n_hidden = 28 # nb of neurons inside the neural network
         self.n_classes = len(y_train[0])  # Final output classes
         self.W = {
             'hidden': tf.Variable(tf.random_normal([self.n_inputs, self.n_hidden])),
@@ -173,7 +173,7 @@ class HARConfig(Config):
         self.bias_mean = 0.3
         self.weights_stddev = 0.2
         self.n_layers_in_highway = 0
-        self.n_stacked_layers = 6
+        self.n_stacked_layers = 3
         self.also_add_dropout_between_stacked_cells = False
 
 
@@ -183,6 +183,7 @@ config = HARConfig()
 
 def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     tf.reset_default_graph()  # To enable to run multiple things in a loop
+    config.print_config()
 
     #-----------------------------------
     # Define parameters for model
