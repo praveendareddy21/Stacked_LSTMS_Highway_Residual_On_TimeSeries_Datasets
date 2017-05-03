@@ -7,7 +7,7 @@ from tensorflow.python.framework import ops
 
 
 import lstm_mnist
-import bi_dir_residual_lstm_HAR
+
 
 
 import deep_lstm_model
