@@ -17,8 +17,35 @@ def savefile(outfile, dataset, ids):
         for id in ids:
             of.write(dataset[id])
 
+def saveListsToCsvfile(outfile, dataset, ids):
+    pass
+	
 def perform_sliding_winow(infile, ratio):
-	pass
+    dataset = loadfileWithStrippedNewline(infile)
+    dataset = SlidingWindowGenerator(dataset, window_size=5).runSlidingWindow(max_dataset_size = 0)
+    total = len(dataset)
+    if len(dataset) <= 0:
+        print('load empty file, quit')
+        sys.exit(-1)
+
+    if ratio < 0:
+        print('ratio should be in (0,1), reset it to 0.2')
+        ratio = 0.2
+        testcnt = int(total*ratio)
+    elif ratio > 1:
+        print('set absolute test number as %d'%ratio)
+        testcnt = int(ratio)
+    else:
+        testcnt = int(total*ratio)
+    
+
+    id = np.arange(total)
+    perm = np.random.permutation(id)
+    
+    test = perm[:testcnt]
+    train = perm[testcnt:]
+    saveListsToCsvfile('train-' + infile, dataset, train)
+    saveListsToCsvfile('test-' + infile, dataset, test)
 
 def process_split(infile, ratio):
 
