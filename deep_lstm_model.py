@@ -18,6 +18,32 @@ def one_hot(y):
     n_values = np.max(y) + 1
     return np.eye(n_values)[np.array(y, dtype=np.int32)]  # Returns FLOATS
 
+def apply_batch_norm(input_tensor, config, i):
+
+    with tf.variable_scope("batch_norm") as scope:
+        if i != 0 :
+            # Do not create extra variables for each time step
+            scope.reuse_variables()
+
+        # Mean and variance normalisation simply crunched over all axes
+        axes = list(range(len(input_tensor.get_shape())))
+
+        mean, variance = tf.nn.moments(input_tensor, axes=axes, shift=None, name=None, keep_dims=False)
+        stdev = tf.sqrt(variance + 0.001)
+
+        # Rescaling
+        bn = input_tensor - mean
+        bn /= stdev
+        # Learnable extra rescaling
+
+        # tf.get_variable("relu_fc_weights", initializer=tf.random_normal(mean=0.0, stddev=0.0)
+        bn *= tf.get_variable("a_noreg", initializer=tf.random_normal([1], mean=0.5, stddev=0.0))
+        bn += tf.get_variable("b_noreg", initializer=tf.random_normal([1], mean=0.0, stddev=0.0))
+        # bn *= tf.Variable(0.5, name=(scope.name + "/a_noreg"))
+        # bn += tf.Variable(0.0, name=(scope.name + "/b_noreg"))
+
+    return bn
+
 
 def relu_fc(input_2D_tensor_list, features_len, new_features_len, config):
     """make a relu fully-connected layer, mainly change the shape of tensor
@@ -67,6 +93,9 @@ def single_LSTM_cell(input_hidden_tensor, n_outputs):
 def stack_single_LSTM_layer(input_hidden_tensor, n_input, n_output, layer_level, config, keep_prob_for_dropout):
 
     with tf.variable_scope('layer_{}'.format(layer_level)) as scope:
+        if config.batch_norm_enabled :
+            input_hidden_tensor = [apply_batch_norm(out, config, i) for i, out in enumerate(input_hidden_tensor)]
+
         hidden_LSTM_layer = single_LSTM_cell(input_hidden_tensor, n_output)
         #hidden_LSTM_layer = single_LSTM_cell(relu_fc(input_hidden_tensor, n_input, n_output, config), n_output)
 
@@ -124,9 +153,9 @@ def deep_LSTM_network(feature_mat, config, keep_prob_for_dropout):
 
 X_train, y_train, X_test, y_test = get_HAR_data()
 
-class HARConfig(Config):
+class DeepLSTMConfig(Config):
     def __init__(self):
-        super(HARConfig, self).__init__()
+        super(DeepLSTMConfig, self).__init__()
         self.train_count = len(X_train)  # 7352 training series
         self.test_data_count = len(X_test)  # 2947 testing series
         self.n_steps = len(X_train[0])  # 128 time_steps per series
@@ -158,12 +187,12 @@ class HARConfig(Config):
 
 
 #config = Config(X_train, X_test)
-config = HARConfig()
+config = DeepLSTMConfig()
 
 
 def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     tf.reset_default_graph()  # To enable to run multiple things in a loop
-
+    config.print_config()
     #-----------------------------------
     # Define parameters for model
     #-----------------------------------
@@ -229,3 +258,6 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     print("best epoch's test accuracy: {}".format(best_accuracy))
     print("")
 
+
+if __name__ == '__main__':
+    run_with_config(config) #, trX, trY, teX, teY)
