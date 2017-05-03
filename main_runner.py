@@ -39,6 +39,7 @@ if __name__ == '__main__':
 		for decay in [0.9]: #[0.005, 0.01]:
 			for bn_enabled in [True, False]:
 				for n_stacked in [1]: # [2,3, 6]:
+					config.tensor_board_logging_enabled = False #should be always False, log summary folder gets impacted by mulitple runs
 					config.n_stacked_layers = n_stacked
 					config.batch_norm_enabled = bn_enabled
 					config.learning_rate = learning_rate

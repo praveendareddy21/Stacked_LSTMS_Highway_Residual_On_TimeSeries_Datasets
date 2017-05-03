@@ -184,6 +184,9 @@ class DeepLSTMConfig(Config):
         self.n_layers_in_highway = 0
         self.n_stacked_layers = 6
         self.also_add_dropout_between_stacked_cells = False
+        self.tensor_board_logging_enabled = True
+        self.logs_path = '/tmp/LSTM_logs/deep_lstm/'
+        self.tensorboard_cmd = "tensorboard --logdir="+ self.logs_path
 
 
 #config = Config(X_train, X_test)

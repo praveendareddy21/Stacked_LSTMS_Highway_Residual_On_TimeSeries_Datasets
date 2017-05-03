@@ -27,6 +27,7 @@ class Config(object):
 		self.n_stacked_layers = 1
 		self.training_epochs = 300
 		self.batch_size = 1500
+		self.tensor_board_logging_enabled = False
 
 
 	def print_config(self):
