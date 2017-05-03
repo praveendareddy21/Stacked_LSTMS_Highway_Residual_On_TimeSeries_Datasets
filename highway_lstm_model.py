@@ -129,6 +129,8 @@ def single_LSTM_cell(input_hidden_tensor, n_outputs):
 
 def stack_single_highway_LSTM_layer(input_hidden_tensor, n_input, n_output, layer_level, config, keep_prob_for_dropout):
     with tf.variable_scope('baselayer_{}'.format(layer_level)) as scope:
+        if config.batch_norm_enabled :
+            input_hidden_tensor = [apply_batch_norm(out, config, i) for i, out in enumerate(input_hidden_tensor)]
         hidden_LSTM_layer = single_LSTM_cell(input_hidden_tensor, n_output)
     with tf.variable_scope('residuallayer_{}'.format(layer_level)) as scope:
         upper_LSTM_layer = single_LSTM_cell(hidden_LSTM_layer, n_output)
@@ -213,29 +215,36 @@ class HighwayConfig(Config):
         self.n_inputs = len(X_train[0][0])  # == 9 Features count is of 9: three 3D sensors features over time
         self.n_hidden = 32  # nb of neurons inside the neural network
         self.n_classes = 6  # Final output classes
-        self.W = {
-            'hidden': tf.Variable(tf.random_normal([self.n_inputs, self.n_hidden])),
-            'output': tf.Variable(tf.random_normal([self.n_hidden, self.n_classes]))
-        }
-        self.biases = {
-            'hidden': tf.Variable(tf.random_normal([self.n_hidden], mean=1.0)),
-            'output': tf.Variable(tf.random_normal([self.n_classes]))
-        }
+
         self.keep_prob_for_dropout = 0.85
         self.bias_mean = 0.3
         self.weights_stddev = 0.2
         self.n_layers_in_highway = 0
         self.n_stacked_layers = 6
         self.also_add_dropout_between_stacked_cells = False
+        self.batch_norm_enabled = True
+        self.tensor_board_logging_enabled = True
+        self.logs_path = "/tmp/LSTM_logs/highway_lstm/"
+        self.tensorboard_cmd = "tensorboard --logdir="+ self.logs_path
 
 
 #config = Config(X_train, X_test)
 config = HighwayConfig()
 
 
+
 def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     tf.reset_default_graph()  # To enable to run multiple things in a loop
     config.print_config()
+
+    config.W = {
+        'hidden': tf.Variable(tf.random_normal([config.n_inputs, config.n_hidden])),
+        'output': tf.Variable(tf.random_normal([config.n_hidden, config.n_classes]))
+    }
+    config.biases = {
+        'hidden': tf.Variable(tf.random_normal([config.n_hidden], mean=1.0)),
+        'output': tf.Variable(tf.random_normal([config.n_classes]))
+    }
     #-----------------------------------
     # Define parameters for model
     #-----------------------------------
@@ -272,6 +281,13 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
 
     correct_pred = tf.equal(tf.argmax(pred_Y, 1), tf.argmax(Y, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_pred, dtype=tf.float32))
+    # ------------------------------------------------------
+    # step3.5 : Tensorboard stuff here
+    # ------------------------------------------------------
+    if config.tensor_board_logging_enabled:
+        tf.summary.scalar("loss", cost)
+        tf.summary.scalar("accuracy", accuracy)
+        merged_summary_op = tf.summary.merge_all()
 
     # --------------------------------------------
     # step4: Hooray, now train the neural network
@@ -280,13 +296,24 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=False))
     tf.global_variables_initializer().run()
 
+    if config.tensor_board_logging_enabled:
+        # op to write logs to Tensorboard
+        summary_writer = tf.summary.FileWriter(config.logs_path, graph=tf.get_default_graph())
+
     best_accuracy = 0.0
     # Start training for each batch and loop epochs
     for i in range(config.training_epochs):
         for start, end in zip(range(0, config.train_count, config.batch_size),
                               range(config.batch_size, config.train_count + 1, config.batch_size)):
-            sess.run(optimizer, feed_dict={X: X_train[start:end],
-                                           Y: y_train[start:end]})
+            if config.tensor_board_logging_enabled:
+                _, summary = sess.run([optimizer, merged_summary_op],
+                                      feed_dict={X: X_train[start:end], Y: y_train[start:end]})
+            else:
+                sess.run(optimizer, feed_dict={X: X_train[start:end], Y: y_train[start:end]})
+
+        if config.tensor_board_logging_enabled:
+            # Write logs at every iteration
+            summary_writer.add_summary(summary, i)
 
         # Test completely at every epoch: calculate accuracy
         pred_out, accuracy_out, loss_out = sess.run([pred_Y, accuracy, cost], feed_dict={
@@ -300,4 +327,14 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     print("final test accuracy: {}".format(accuracy_out))
     print("best epoch's test accuracy: {}".format(best_accuracy))
     print("")
+
+    if config.tensor_board_logging_enabled:
+        print("Run the command line:\n")
+        print(config.tensorboard_cmd)
+        print("\nThen open http://0.0.0.0:6006/ into your web browser")
+
+
+if __name__ == '__main__':
+    run_with_config(config)  # , trX, trY, teX, teY)
+
 
