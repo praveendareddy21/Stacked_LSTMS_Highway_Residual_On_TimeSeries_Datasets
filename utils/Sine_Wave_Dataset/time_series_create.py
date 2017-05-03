@@ -37,9 +37,9 @@ def saveListsToCsvfile(outfile, dataset, ids):
         			of.write(value+",")
 
 
-def perform_sliding_winow(infile, ratio):
+def perform_sliding_winow(infile, ratio, _window_size, _max_dataset_size):
     dataset = loadfileWithStrippedNewline(infile)
-    dataset = SlidingWindowGenerator(dataset, window_size=5).runSlidingWindow(max_dataset_size = 0)
+    dataset = SlidingWindowGenerator(dataset, window_size=_window_size).runSlidingWindow(max_dataset_size = _max_dataset_size)
     total = len(dataset)
     if len(dataset) <= 0:
         print('load empty file, quit')
@@ -119,20 +119,22 @@ def process_split_X_Y_to_train_test(infile_X, infile_Y, ratio):
     savefile('test_Y-' + infile, dataset_Y, permutated_indices[:testcnt])
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2 :
-        print('usage: datasplit.py <ratio> <infile1> <[infile2]> <[seed]>')
+    """
+     python time_series_create.py 0.2 5 0 data.csv
+    """
+    if len(sys.argv) < 5 :
+        print('usage: time_series_create.py <ratio> <window_size> <max_data_size> <infile1> <[seed]>')
         print('ratio ex : 0.2 would create test data with  0.2*rows, train data with 0.8*rows ')
         sys.exit(-1)
     
-    infile = sys.argv[2]
-    ratio = float(sys.argv[1]) 
+    
+    ratio = float(sys.argv[1])
+    window_size = int(sys.argv[2])
+    max_data_size = int(sys.argv[3])
+    infile = sys.argv[4]
 
-    if len(sys.argv) <= 4:
+    if len(sys.argv) == 6:
         print('fix random seed to 123')
         np.random.seed(seed= 123)
-
-    if len(sys.argv) >= 4:
-        infile2 = sys.argv[3]
-        process_split_X_Y_to_train_test(infile, infile2, ratio)
     else:
-        perform_sliding_winow(infile, ratio)
+        perform_sliding_winow(infile, ratio, window_size, max_data_size)
