@@ -101,7 +101,8 @@ def single_LSTM_Res_cell(input_hidden_tensor, n_outputs, res_unit):
 def stack_single_LSTM_layer(input_hidden_tensor, n_input, n_output, layer_level, config, keep_prob_for_dropout):
 
     with tf.variable_scope('layer_{}'.format(layer_level)) as scope:
-        #hidden_LSTM_layer = single_LSTM_cell(input_hidden_tensor, n_output)
+        if config.batch_norm_enabled :
+            input_hidden_tensor = [apply_batch_norm(out, config, i) for i, out in enumerate(input_hidden_tensor)]
         hidden_LSTM_layer = single_LSTM_Res_cell(input_hidden_tensor, n_output, relu_fc(input_hidden_tensor, n_input, n_output, config))
 
         return hidden_LSTM_layer
@@ -177,6 +178,7 @@ class ResLstmConfig(Config):
         self.n_layers_in_highway = 0
         self.n_stacked_layers = 6
         self.also_add_dropout_between_stacked_cells = False
+        self.batch_norm_enabled = True
         self.tensor_board_logging_enabled = True
         self.logs_path = "/tmp/LSTM_logs/residual_lstm/"
         self.tensorboard_cmd = "tensorboard --logdir="+ self.logs_path
