@@ -81,7 +81,7 @@ class SingleLayerConfig(Config):
         # Trainging
         self.learning_rate = 0.0025
         self.lambda_loss_amount = 0.0015
-        self.training_epochs = 3
+        self.training_epochs = 300
         self.batch_size = 1500
 
         # LSTM structure
@@ -90,7 +90,7 @@ class SingleLayerConfig(Config):
         self.n_classes = 6  # Final output classes
 
         self.tensor_board_logging_enabled = True
-        self.logs_path = "/tmp/LSTM_logs/single_layer_lstm"
+        self.logs_path = "/tmp/LSTM_logs/single_layer_lstm/"
         self.tensorboard_cmd = "tensorboard --logdir="+ self.logs_path
 
 
