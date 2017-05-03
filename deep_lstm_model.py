@@ -185,7 +185,7 @@ class DeepLSTMConfig(Config):
         self.n_stacked_layers = 6
         self.also_add_dropout_between_stacked_cells = False
         self.tensor_board_logging_enabled = True
-        self.logs_path = '/tmp/LSTM_logs/deep_lstm/'
+        self.logs_path = "/tmp/LSTM_logs/deep_lstm"
         self.tensorboard_cmd = "tensorboard --logdir="+ self.logs_path
 
 
@@ -232,6 +232,14 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
 
     correct_pred = tf.equal(tf.argmax(pred_Y, 1), tf.argmax(Y, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_pred, dtype=tf.float32))
+    # ------------------------------------------------------
+    # step3.5 : Tensorboard stuff here
+    # ------------------------------------------------------
+    if config.tensor_board_logging_enabled:
+        tf.summary.scalar("loss", cost)
+        tf.summary.scalar("accuracy", accuracy)
+        merged_summary_op = tf.summary.merge_all()
+
 
     # --------------------------------------------
     # step4: Hooray, now train the neural network
@@ -240,13 +248,24 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=False))
     tf.global_variables_initializer().run()
 
+    if config.tensor_board_logging_enabled:
+        # op to write logs to Tensorboard
+        summary_writer = tf.summary.FileWriter(config.logs_path, graph=tf.get_default_graph())
+
     best_accuracy = 0.0
     # Start training for each batch and loop epochs
     for i in range(config.training_epochs):
         for start, end in zip(range(0, config.train_count, config.batch_size),
                               range(config.batch_size, config.train_count + 1, config.batch_size)):
-            sess.run(optimizer, feed_dict={X: X_train[start:end],
-                                           Y: y_train[start:end]})
+            if config.tensor_board_logging_enabled :
+                _, summary = sess.run([optimizer, merged_summary_op], feed_dict={X: X_train[start:end],Y: y_train[start:end]})
+            else:
+                sess.run(optimizer, feed_dict={X: X_train[start:end],Y: y_train[start:end]})
+
+
+        if config.tensor_board_logging_enabled:
+            # Write logs at every iteration
+            summary_writer.add_summary(summary, i)
 
         # Test completely at every epoch: calculate accuracy
         pred_out, accuracy_out, loss_out = sess.run([pred_Y, accuracy, cost], feed_dict={
@@ -261,6 +280,10 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     print("best epoch's test accuracy: {}".format(best_accuracy))
     print("")
 
+    if config.tensor_board_logging_enabled:
+        print("Run the command line:\n")
+        print(config.tensorboard_cmd)
+        print("\nThen open http://0.0.0.0:6006/ into your web browser")
 
 if __name__ == '__main__':
     run_with_config(config) #, trX, trY, teX, teY)

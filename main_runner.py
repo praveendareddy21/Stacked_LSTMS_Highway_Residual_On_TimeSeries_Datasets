@@ -22,9 +22,14 @@ import residual_lstm_model
 
 if __name__ == '__main__':
 
-	run_with_config = residual_lstm_model.run_with_config
-	config = residual_lstm_model.config
+	run_with_config = deep_lstm_model.run_with_config
+	config = deep_lstm_model.config
 
+	for training_epochs_ in [10, 20]:
+		config.tensor_board_logging_enabled = False  # should be always False, log summary folder gets impacted by mulitple runs
+		config.training_epochs = training_epochs_
+		run_with_config(config)
+	exit(0)
 	#run_with_config = deep_lstm_model.run_with_config
 	#config = deep_lstm_model.config
 
