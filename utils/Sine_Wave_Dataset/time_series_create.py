@@ -3,7 +3,7 @@
 ##
 import sys
 import numpy as np
-import SlidingWindowGenerator
+from SlidingWindowGenerator import SlidingWindowGenerator
 
 
 def loadfile(infile):
@@ -12,14 +12,31 @@ def loadfile(infile):
         data = inf.readlines()
     return data
 
+def loadfileWithStrippedNewline(infile):
+    data = []
+    with open(infile, 'r') as inf:
+        data = inf.readlines()
+
+    stripped_data = []
+    for i in data:
+    	stripped_data.append(i.rstrip())
+    return stripped_data
+
 def savefile(outfile, dataset, ids):
     with open(outfile,'w') as of:
         for id in ids:
             of.write(dataset[id])
 
 def saveListsToCsvfile(outfile, dataset, ids):
-    pass
-	
+    with open(outfile,'w') as of:
+        for id in ids:
+        	for i, value in enumerate(dataset[id]):
+        		if i == len(dataset[id]) - 1:
+        			of.write(value+"\n")
+        		else:
+        			of.write(value+",")
+
+
 def perform_sliding_winow(infile, ratio):
     dataset = loadfileWithStrippedNewline(infile)
     dataset = SlidingWindowGenerator(dataset, window_size=5).runSlidingWindow(max_dataset_size = 0)
@@ -118,4 +135,4 @@ if __name__ == '__main__':
         infile2 = sys.argv[3]
         process_split_X_Y_to_train_test(infile, infile2, ratio)
     else:
-        process_split(infile, ratio)
+        perform_sliding_winow(infile, ratio)
