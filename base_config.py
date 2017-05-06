@@ -28,6 +28,8 @@ class Config(object):
 		self.training_epochs = 300
 		self.batch_size = 1500
 		self.tensor_board_logging_enabled = False
+		self.model_name = "base_config"
+		self.log_folder_suffix = "base_config"
 
 
 	def print_config(self):
@@ -39,6 +41,14 @@ class Config(object):
 		print("training_epochs" + " : " + str(self.training_epochs))
 		print("batch_size" + " : " + str(self.batch_size))
 
+	def attach_log_suffix(self):
+		log_suffix = ""
+		log_suffix = log_suffix + "model:" + str(self.model_name)
+		log_suffix = log_suffix + "/" + "learn:" + str(self.learning_rate)
+		log_suffix = log_suffix + "/" +"stacked_layer:" + str(self.n_stacked_layers)
+		log_suffix = log_suffix + "/" + "epochs:" + str(self.training_epochs)
+
+		return log_suffix
 
 		#self.random = Random(FLAGS.python_seed)
 
