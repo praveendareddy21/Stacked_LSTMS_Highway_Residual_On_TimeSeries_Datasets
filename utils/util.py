@@ -8,52 +8,33 @@ def sigmoid(x):
 
 
 
-#print(sigmoid(0))
-
-
-# To keep track of training's performance
-test_losses = []
-test_accuracies = []
-
-indep_test_axis = []
-
-width = 6#12
-height = 6#12
-pyplot.figure(figsize=(width, height))
-batch_size = 300
-training_iters = 8000 * 300  # Loop 300 times on the dataset
-display_iter = 30000
-
-
-for i in range(batch_size):
-    indep_test_axis.append(i)
-    test_losses.append(3.5 -  1.6 * sigmoid( i/10))
-    test_accuracies.append(0.5 + 0.4 * sigmoid(i/10))
-#print(test_losses)
-#print (test_accuracies)
 
 class YaxisBundle:
-	def __init__(self, y_index_array_input , y_graph_colour):
+	def __init__(self, y_index_array_input, y_graph_label, y_graph_colour):
 		self.y_index_array_input  = y_index_array_input
 		self.y_graph_colour = y_graph_colour
-		self.y_label =  y_label
+		self.y_graph_label = y_graph_label
+
 
 
 class PlotUtil:
-	def __init__(self, plot_title, x_index_array_input , x_label, width = 6, height = 6):
+	def __init__(self, plot_title, x_index_array_input , x_label, y_label, width = 6, height = 6):
 		self.x_index_array_input  = x_index_array_input
 		self.plot_title = plot_title
 		self.x_label =  x_label
+		self.y_label =  y_label
 		self.width = width
 		self.height = height
-	def show_plot(self, y_target):
-		pyplot.figure(figsize=(width, height))
-		pyplot.plot(indep_test_axis, np.array(test_losses), "b-", label="Test losses")
-		pyplot.title("Training session's progress over iterations")
-		pyplot.legend(loc='upper right', shadow=True)
-		pyplot.ylabel('Training Progress (Loss or Accuracy values)')
-		pyplot.xlabel('Training iteration')
+	def show_plot(self, YaxisBundle_array):
+		pyplot.figure(figsize=(self.width, self.height))
 
+		for y in YaxisBundle_array:
+			pyplot.plot(self.x_index_array_input, np.array(y.y_index_array_input), y.y_graph_colour, label=y.y_graph_label)
+
+		pyplot.title(self.plot_title)
+		pyplot.legend(loc='upper right', shadow=True)
+		pyplot.ylabel(self.y_label)
+		pyplot.xlabel(self.x_label)
 		pyplot.show()
 
 
@@ -62,7 +43,25 @@ class PlotUtil:
 
 
 if __name__ == '__main__':
-    """
-     comments
-    """
-    pass
+
+	test_losses = []
+	test_accuracies = []
+	indep_test_axis = []
+	batch_size = 300
+
+	for i in range(batch_size):
+	    indep_test_axis.append(i)
+	    test_losses.append(3.5 -  1.6 * sigmoid( i/10))
+	    test_accuracies.append(0.5 + 0.4 * sigmoid(i/10))
+
+
+	p = PlotUtil("title", indep_test_axis, "x_label", "y_label")
+	y_bundle =[]
+	
+	y = YaxisBundle(test_losses,"loss", "b")
+	y_bundle.append(y)
+
+	y = YaxisBundle(test_accuracies,"accuracy", "g")
+	y_bundle.append(y)
+	
+	p.show_plot(y_bundle)
