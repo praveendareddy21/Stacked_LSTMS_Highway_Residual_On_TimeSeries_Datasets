@@ -4,6 +4,8 @@ from sklearn import metrics
 from sklearn.utils import shuffle
 import numpy as np
 from base_config import Config
+import matplotlib
+import matplotlib.pyplot as plt
 
 def one_hot(y):
     """convert label from dense to one hot
@@ -43,6 +45,40 @@ def apply_batch_norm(input_tensor, config, i):
         # bn += tf.Variable(0.0, name=(scope.name + "/b_noreg"))
 
     return bn
+
+# Load "X" (the neural network's training and testing inputs)
+
+def load_X(X_signals_paths):
+    X_signals = []
+
+    for signal_type_path in X_signals_paths:
+        file = open(signal_type_path, 'rb')
+        # Read dataset from disk, dealing with text files' syntax
+        X_signals.append(
+            [np.array(serie, dtype=np.float32) for serie in [
+                row.replace('  ', ' ').strip().split(' ') for row in file
+            ]]
+        )
+        file.close()
+
+    return np.transpose(np.array(X_signals), (1, 2, 0))
+
+
+# Load "y" (the neural network's training and testing outputs)
+
+def load_y(y_path):
+    file = open(y_path, 'rb')
+    # Read dataset from disk, dealing with text file's syntax
+    y_ = np.array(
+        [elem for elem in [
+            row.replace('  ', ' ').strip().split(' ') for row in file
+        ]],
+        dtype=np.int32
+    )
+    file.close()
+    # Substract 1 to each output class for friendly 0-based indexing
+    return y_ - 1
+
 
 
 def relu_fc(input_2D_tensor_list, features_len, new_features_len, config):
@@ -84,40 +120,57 @@ def relu_fc(input_2D_tensor_list, features_len, new_features_len, config):
 
 def single_LSTM_cell(input_hidden_tensor, n_outputs):
     with tf.variable_scope("lstm_cell"):
-        lstm_cell = tf.contrib.rnn.BasicLSTMCell(n_outputs, state_is_tuple=True, forget_bias=0.999)
+        lstm_cell  = tf.contrib.rnn.BasicLSTMCell(n_outputs, state_is_tuple=True, forget_bias=0.999)
+        #print(lstm_cell)
         #outputs, _ = tf.nn.rnn(lstm_cell, input_hidden_tensor, dtype=tf.float32)
-        outputs, _ = tf.contrib.rnn.static_rnn(lstm_cell, input_hidden_tensor, dtype=tf.float32)
+        outputs, states = tf.contrib.rnn.static_rnn(lstm_cell, input_hidden_tensor, dtype=tf.float32)
+        #print(states)
+
     return outputs
 
 
-def stack_single_LSTM_layer(input_hidden_tensor, n_input, n_output, layer_level, config, keep_prob_for_dropout):
-
-    with tf.variable_scope('layer_{}'.format(layer_level)) as scope:
+def stack_single_highway_LSTM_layer(input_hidden_tensor, n_input, n_output, layer_level, config, keep_prob_for_dropout):
+    with tf.variable_scope('baselayer_{}'.format(layer_level)) as scope:
         if config.batch_norm_enabled :
             input_hidden_tensor = [apply_batch_norm(out, config, i) for i, out in enumerate(input_hidden_tensor)]
-
         hidden_LSTM_layer = single_LSTM_cell(input_hidden_tensor, n_output)
-        #hidden_LSTM_layer = single_LSTM_cell(relu_fc(input_hidden_tensor, n_input, n_output, config), n_output)
-
+    with tf.variable_scope('residuallayer_{}'.format(layer_level)) as scope:
+        upper_LSTM_layer = single_LSTM_cell(hidden_LSTM_layer, n_output)
+        hidden_LSTM_layer = [a + b for a, b in zip(hidden_LSTM_layer, upper_LSTM_layer)]
         return hidden_LSTM_layer
 
-def get_deeply_stacked_LSTM_layers(input_hidden_tensor, n_input, n_output, config, keep_prob_for_dropout):
+
+def stack_single_highway_LSTM_layer_(input_hidden_tensor, n_input, n_output, layer_level, config, keep_prob_for_dropout):
+    with tf.variable_scope('layer_{}'.format(layer_level)) as scope:
+        upper_LSTM_layer = single_LSTM_cell(input_hidden_tensor, n_output)
+        hidden_LSTM_layer =  [ a + b for a,b in zip(input_hidden_tensor , upper_LSTM_layer)]
+        return hidden_LSTM_layer
+
+
+
+def get_stacked_highway_LSTM_layers(input_hidden_tensor, n_input, n_output, config, keep_prob_for_dropout):
 
     # creating base lstm Layer
     print "\nCreating hidden #1:"
-    hidden = stack_single_LSTM_layer(input_hidden_tensor, config.n_inputs, config.n_hidden, 1, config, keep_prob_for_dropout)
+    hidden = stack_single_highway_LSTM_layer(input_hidden_tensor, config.n_inputs, config.n_hidden, 1, config, keep_prob_for_dropout)
     print (len(hidden), str(hidden[0].get_shape()))
+
+
+
 
     # Stacking LSTM layer on existing layer in a for loop
     for stacked_hidden_index in range(config.n_stacked_layers - 1):
         # If the config permits it, we stack more lstm cells:
         print "\nCreating hidden #{}:".format(stacked_hidden_index + 2)
-        hidden = stack_single_LSTM_layer(hidden, config.n_hidden, config.n_hidden, stacked_hidden_index + 2, config,
+        hidden = stack_single_highway_LSTM_layer(hidden, config.n_hidden, config.n_hidden, stacked_hidden_index + 2, config,
                                          keep_prob_for_dropout)
         print (len(hidden), str(hidden[0].get_shape()))
 
     print ""
     return hidden
+
+
+
 
 def deep_LSTM_network(feature_mat, config, keep_prob_for_dropout):
     with tf.variable_scope('LSTM_network') as scope:  # TensorFlow graph naming
@@ -132,15 +185,10 @@ def deep_LSTM_network(feature_mat, config, keep_prob_for_dropout):
         print (len(hidden), str(hidden[0].get_shape()))
         # New shape: a list of lenght "time_step" containing tensors of shape [batch_size, n_hidden]
 
-        hidden = get_deeply_stacked_LSTM_layers(hidden, config.n_inputs, config.n_hidden, config, keep_prob_for_dropout)
+        hidden = get_stacked_highway_LSTM_layers(hidden, config.n_inputs, config.n_hidden, config, keep_prob_for_dropout)
 
         # Final fully-connected activation logits
         # Get the last output tensor of the inner loop output series, of shape [batch_size, n_classes]
-        lstm_last_output = hidden[-1]
-
-        # Linear activation
-        return tf.matmul(lstm_last_output, config.W['output']) + config.biases['output']
-
         last_hidden = tf.nn.dropout(hidden[-1], keep_prob_for_dropout)
         last_logits = relu_fc(
             [last_hidden],
@@ -148,58 +196,53 @@ def deep_LSTM_network(feature_mat, config, keep_prob_for_dropout):
         )[0]
         return last_logits
 
-
 ################################## load data and config ##################################
 
 X_train, y_train, X_test, y_test = get_HAR_data()
 
-class DeepLSTMConfig(Config):
+class HighwayConfig(Config):
     def __init__(self):
-        super(DeepLSTMConfig, self).__init__()
+        super(HighwayConfig, self).__init__()
         self.train_count = len(X_train)  # 7352 training series
         self.test_data_count = len(X_test)  # 2947 testing series
         self.n_steps = len(X_train[0])  # 128 time_steps per series
 
         # Trainging
-        self.learning_rate = 0.00025
+        self.learning_rate = 0.0005
         self.lambda_loss_amount = 0.0015
-        self.training_epochs = 450
+        self.training_epochs = 300
         self.batch_size = 1500
 
         # LSTM structure
         self.n_inputs = len(X_train[0][0])  # == 9 Features count is of 9: three 3D sensors features over time
         self.n_hidden = 32  # nb of neurons inside the neural network
         self.n_classes = 6  # Final output classes
-        self.W = {
-            'hidden': tf.Variable(tf.random_normal([self.n_inputs, self.n_hidden])),
-            'output': tf.Variable(tf.random_normal([self.n_hidden, self.n_classes]))
-        }
-        self.biases = {
-            'hidden': tf.Variable(tf.random_normal([self.n_hidden], mean=1.0)),
-            'output': tf.Variable(tf.random_normal([self.n_classes]))
-        }
+
         self.keep_prob_for_dropout = 0.85
         self.bias_mean = 0.3
         self.weights_stddev = 0.2
         self.n_layers_in_highway = 0
-        self.n_stacked_layers = 6
-        self.batch_norm_enabled = True
+        self.n_stacked_layers = 1
         self.also_add_dropout_between_stacked_cells = False
-        self.tensor_board_logging_enabled = True
-        self.logs_path = "/tmp/LSTM_logs/deep_lstm"
+        self.batch_norm_enabled = True
+        self.tensor_board_logging_enabled = False
+        self.logs_path = "/tmp/LSTM_logs/highway_lstm/"
         self.tensorboard_cmd = "tensorboard --logdir="+ self.logs_path
 
 
 #config = Config(X_train, X_test)
-config = DeepLSTMConfig()
+config = HighwayConfig()
+
 
 
 def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     tf.reset_default_graph()  # To enable to run multiple things in a loop
     config.print_config()
-    #-----------------------------------
-    # Define parameters for model
-    #-----------------------------------
+
+    # To keep track of training's performance
+    test_losses = []
+    test_accuracies = []
+
 
     config.W = {
         'hidden': tf.Variable(tf.random_normal([config.n_inputs, config.n_hidden])),
@@ -209,6 +252,10 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
         'hidden': tf.Variable(tf.random_normal([config.n_hidden], mean=1.0)),
         'output': tf.Variable(tf.random_normal([config.n_classes]))
     }
+    #-----------------------------------
+    # Define parameters for model
+    #-----------------------------------
+
 
     print("Some useful info to get an insight on dataset's shape and normalisation:")
     print("features shape, labels shape, each features mean, each features standard deviation")
@@ -249,7 +296,6 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
         tf.summary.scalar("accuracy", accuracy)
         merged_summary_op = tf.summary.merge_all()
 
-
     # --------------------------------------------
     # step4: Hooray, now train the neural network
     # --------------------------------------------
@@ -266,11 +312,11 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     for i in range(config.training_epochs):
         for start, end in zip(range(0, config.train_count, config.batch_size),
                               range(config.batch_size, config.train_count + 1, config.batch_size)):
-            if config.tensor_board_logging_enabled :
-                _, summary = sess.run([optimizer, merged_summary_op], feed_dict={X: X_train[start:end],Y: y_train[start:end]})
+            if config.tensor_board_logging_enabled:
+                _, summary = sess.run([optimizer, merged_summary_op],
+                                      feed_dict={X: X_train[start:end], Y: y_train[start:end]})
             else:
-                sess.run(optimizer, feed_dict={X: X_train[start:end],Y: y_train[start:end]})
-
+                sess.run(optimizer, feed_dict={X: X_train[start:end], Y: y_train[start:end]})
 
         if config.tensor_board_logging_enabled:
             # Write logs at every iteration
@@ -279,6 +325,8 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
         # Test completely at every epoch: calculate accuracy
         pred_out, accuracy_out, loss_out = sess.run([pred_Y, accuracy, cost], feed_dict={
             X: X_test, Y: y_test})
+        test_losses.append(loss_out)
+        test_accuracies.append(accuracy_out)
         print("traing iter: {},".format(i) + \
               " test accuracy : {},".format(accuracy_out) + \
               " loss : {}".format(loss_out))
@@ -294,5 +342,33 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
         print(config.tensorboard_cmd)
         print("\nThen open http://0.0.0.0:6006/ into your web browser")
 
+    else:
+        width = 12
+        height = 12
+        plt.figure(figsize=(width, height))
+        batch_size = config.batch_size
+        training_iters = config.train_count * 300  # Loop 300 times on the dataset
+        display_iter = 30000
+
+        #indep_train_axis = np.array(range(batch_size, (len(train_losses) + 1) * batch_size, batch_size))
+        #plt.plot(indep_train_axis, np.array(train_losses), "b--", label="Train losses")
+        #plt.plot(indep_train_axis, np.array(train_accuracies), "g--", label="Train accuracies")
+
+        indep_test_axis = np.array(range(batch_size, len(test_losses) * display_iter, display_iter)[:-1] + [training_iters])
+
+        plt.plot(indep_test_axis, np.array(test_losses), "b-", label="Test losses")
+        plt.plot(indep_test_axis, np.array(test_accuracies), "g-", label="Test accuracies")
+
+        plt.title("Training session's progress over iterations")
+        plt.legend(loc='upper right', shadow=True)
+        plt.ylabel('Training Progress (Loss or Accuracy values)')
+        plt.xlabel('Training iteration')
+
+        plt.show()
+
+
+
 if __name__ == '__main__':
-    run_with_config(config) #, trX, trY, teX, teY)
+    run_with_config(config)  # , trX, trY, teX, teY)
+
+

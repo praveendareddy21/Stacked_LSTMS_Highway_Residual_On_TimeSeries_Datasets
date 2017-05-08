@@ -211,7 +211,7 @@ def deep_LSTM_network(feature_mat, config, keep_prob_for_dropout):
 
 
 ################################## load data and config ##################################
-X_train, y_train, X_test, y_test, series_size = get_dataset_with_series_size(dataset='PhalangesOutlinesCorrect')
+X_train, y_train, X_test, y_test, series_size = get_dataset_with_series_size(dataset='synthetic_control')
 
 #X_train, y_train, X_test, y_test, series_size = get_dataset_with_series_size(dataset='ElectricDevices')
 X_train = X_train.reshape((-1, series_size, 1))
@@ -260,7 +260,7 @@ class HighwayLSTMOnUCRConfig(Config):
         self.also_add_dropout_between_stacked_cells = False
         self.tensor_board_logging_enabled = True
         self.model_name = "highway_lstm_" \
-                          "" + "PhalangesOutlinesCorrect"
+                          "" + "synthetic_control"
         self.log_folder_suffix = self.attach_log_suffix()
         self.logs_path = "/tmp/LSTM_logs/"+self.log_folder_suffix
         self.tensorboard_cmd = "tensorboard --logdir="+ self.logs_path

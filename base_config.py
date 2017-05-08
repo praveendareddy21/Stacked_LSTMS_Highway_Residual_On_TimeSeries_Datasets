@@ -31,6 +31,16 @@ class Config(object):
 		self.model_name = "base_config"
 		self.log_folder_suffix = "base_config"
 
+		self.train_count = 0
+		self.test_data_count = 0
+		self.n_steps = 0
+
+
+		# LSTM structure
+		self.n_inputs = 0  # == 9 Features count is of 9: three 3D sensors features over time
+		self.n_hidden = 0  # nb of neurons inside the neural network
+		self.n_classes = 0 # Final output classes
+
 
 	def print_config(self):
 		print("#####")
@@ -40,6 +50,14 @@ class Config(object):
 		print("n_stacked_layers" + " : " + str(self.n_stacked_layers))
 		print("training_epochs" + " : " + str(self.training_epochs))
 		print("batch_size" + " : " + str(self.batch_size))
+		print("model_name" + " : " + str(self.model_name))
+
+		print("train dataset size" + " : " + str(self.train_count))
+		print("test dataset size" + " : " + str(self.test_data_count))
+		print("time-series size" + " : " + str(self.n_steps))
+
+		print("lstm neuron count" + " : " + str(self.n_hidden))
+		print("output class count" + " : " + str(self.n_classes))
 
 	def attach_log_suffix(self):
 		log_suffix = ""

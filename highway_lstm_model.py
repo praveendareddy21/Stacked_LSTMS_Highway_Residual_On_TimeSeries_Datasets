@@ -206,9 +206,9 @@ class HighwayConfig(Config):
         self.n_steps = len(X_train[0])  # 128 time_steps per series
 
         # Trainging
-        self.learning_rate = 0.005
+        self.learning_rate = 0.0005
         self.lambda_loss_amount = 0.0015
-        self.training_epochs = 300
+        self.training_epochs = 450
         self.batch_size = 1500
 
         # LSTM structure
@@ -220,7 +220,7 @@ class HighwayConfig(Config):
         self.bias_mean = 0.3
         self.weights_stddev = 0.2
         self.n_layers_in_highway = 0
-        self.n_stacked_layers = 6
+        self.n_stacked_layers = 4
         self.also_add_dropout_between_stacked_cells = False
         self.batch_norm_enabled = True
         self.tensor_board_logging_enabled = True
