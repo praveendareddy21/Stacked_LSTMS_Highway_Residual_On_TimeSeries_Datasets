@@ -4,7 +4,7 @@ from sklearn import metrics
 from sklearn.utils import shuffle
 from UCR_time_series_data_handler import get_dataset_with_series_size
 import numpy as np
-from base_config import Config
+from base_config import Config, YaxisBundle, PlotUtil
 
 def one_hot(y):
     """convert label from dense to one hot

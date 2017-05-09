@@ -3,7 +3,7 @@ import tensorflow as tf
 from sklearn import metrics
 from sklearn.utils import shuffle
 import numpy as np
-from base_config import Config
+from base_config import Config, YaxisBundle, PlotUtil
 from UCR_time_series_data_handler import get_dataset_with_series_size
 
 def one_hot(y):
