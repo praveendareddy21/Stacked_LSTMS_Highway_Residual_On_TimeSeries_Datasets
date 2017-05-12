@@ -359,16 +359,18 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
         #indep_test_axis = [i for i in range(config.batch_size)]
         #indep_test_axis = np.array(indep_test_axis)
 
-        p = PlotUtil("title", indep_test_axis, "x_label", "y_label")
+        #p = PlotUtil("title", indep_test_axis, "x_label", "y_label")
         y_bundle = []
+        test_losses = np.array(test_losses)
+        test_accuracies = np.array(test_accuracies)
 
-        y = YaxisBundle(test_losses, "loss", "b")
+        y = YaxisBundle(np.array(test_losses), "loss", "b")
         y_bundle.append(y)
 
-        y = YaxisBundle(test_accuracies, "accuracy", "g")
+        y = YaxisBundle(np.array(test_accuracies), "accuracy", "g")
         y_bundle.append(y)
 
-        p.show_plot(y_bundle)
+        #p.show_plot(y_bundle)
 
         if config.matplot_lib_for_accuracy:
             return y_bundle[1]
@@ -379,6 +381,14 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
 
 
 if __name__ == '__main__':
-    run_with_config(config)  # , trX, trY, teX, teY)
+    y_bundle = []
+    indep_test_axis = []
+    for i in range(config.batch_size):
+        indep_test_axis.append(i)
+    p = PlotUtil("title", indep_test_axis, "x_label", "y_label")
+
+    y_bundle.append(run_with_config(config))
+    p.show_plot(y_bundle)
+
 
 

@@ -98,11 +98,24 @@ class PlotUtil:
 		self.y_label =  y_label
 		self.width = width
 		self.height = height
-	def show_plot(self, YaxisBundle_array):
+	def show_plot(self, YaxisBundle_array, is_x_index_variable = True):
 		pyplot.figure(figsize=(self.width, self.height))
+		assert isinstance(self.x_index_array_input, np.ndarray), "X-axis index must be a numpy ndarray"
+		x_axis_length = len(self.x_index_array_input)
+
 
 		for y in YaxisBundle_array:
-			pyplot.plot(self.x_index_array_input, np.array(y.y_index_array_input), y.y_graph_colour, label=y.y_graph_label)
+			assert isinstance(y.y_index_array_input, np.ndarray), "Y-axis array must be a numpy ndarray"
+			if is_x_index_variable: #TODO refine this logic
+				self.x_index_array_input = None
+				_ = []
+				for i in range(len(y.y_index_array_input)):
+					_.append(i)
+				self.x_index_array_input = np.array(_)
+
+			assert (len(y.y_index_array_input) == len(self.x_index_array_input)), "Both axes indexes must be of same length"
+
+			pyplot.plot(self.x_index_array_input, y.y_index_array_input, y.y_graph_colour, label=y.y_graph_label)
 
 		pyplot.title(self.plot_title)
 		pyplot.legend(loc='upper right', shadow=True)
@@ -122,6 +135,10 @@ if __name__ == '__main__':
 	    indep_test_axis.append(i)
 	    test_losses.append(3.5 -  1.6 * sigmoid( i/10))
 	    test_accuracies.append(0.5 + 0.4 * sigmoid(i/10))
+
+	indep_test_axis = np.array(indep_test_axis)
+	test_losses = np.array(test_losses)
+	test_accuracies = np.array(test_accuracies)
 
 
 	p = PlotUtil("title", indep_test_axis, "x_label", "y_label")
