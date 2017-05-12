@@ -21,7 +21,12 @@ import highway_lstm_model_UCR_dataset
 import math
 
 y_bundle = []
-indep_test_axis_0 = []
+
+indep_test_axis = []
+batch_size = 300
+
+for i in range(batch_size):
+	indep_test_axis.append(i)
 
 def sigmoid(x):
   return 1 / (1 + math.exp(-x))
@@ -31,11 +36,9 @@ def show_multi_plot():
 
 	test_losses = []
 	test_accuracies = []
-	indep_test_axis = []
-	batch_size = 300
+
 
 	for i in range(batch_size):
-		indep_test_axis.append(i)
 		test_losses.append(3.5 - 1.6 * sigmoid(i / 10))
 		test_accuracies.append(0.5 + 0.4 * sigmoid(i / 10))
 
