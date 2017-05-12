@@ -3,7 +3,7 @@ import tensorflow as tf
 from sklearn import metrics
 from sklearn.utils import shuffle
 import numpy as np
-from base_config import Config
+from base_config import Config, YaxisBundle, PlotUtil
 import matplotlib
 import matplotlib.pyplot as plt
 
@@ -228,6 +228,8 @@ class HighwayConfig(Config):
         self.tensor_board_logging_enabled = False
         self.logs_path = "/tmp/LSTM_logs/highway_lstm/"
         self.tensorboard_cmd = "tensorboard --logdir="+ self.logs_path
+        self.matplot_lib_enabled = True
+        self.matplot_lib_for_accuracy =True
 
 
 #config = Config(X_train, X_test)
@@ -239,9 +241,12 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     tf.reset_default_graph()  # To enable to run multiple things in a loop
     config.print_config()
 
-    # To keep track of training's performance
-    test_losses = []
-    test_accuracies = []
+    if config.matplot_lib_enabled:
+        # To keep track of training's performance
+        test_losses = []
+        test_accuracies = []
+        indep_test_axis = []
+
 
 
     config.W = {
@@ -325,8 +330,12 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
         # Test completely at every epoch: calculate accuracy
         pred_out, accuracy_out, loss_out = sess.run([pred_Y, accuracy, cost], feed_dict={
             X: X_test, Y: y_test})
-        test_losses.append(loss_out)
-        test_accuracies.append(accuracy_out)
+
+        if config.matplot_lib_enabled:
+            indep_test_axis.append(i)
+            test_losses.append(loss_out)
+            test_accuracies.append(accuracy_out)
+
         print("traing iter: {},".format(i) + \
               " test accuracy : {},".format(accuracy_out) + \
               " loss : {}".format(loss_out))
@@ -342,29 +351,30 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
         print(config.tensorboard_cmd)
         print("\nThen open http://0.0.0.0:6006/ into your web browser")
 
-    else:
-        width = 12
-        height = 12
-        plt.figure(figsize=(width, height))
-        batch_size = config.batch_size
-        training_iters = config.train_count * 300  # Loop 300 times on the dataset
-        display_iter = 30000
 
-        #indep_train_axis = np.array(range(batch_size, (len(train_losses) + 1) * batch_size, batch_size))
-        #plt.plot(indep_train_axis, np.array(train_losses), "b--", label="Train losses")
-        #plt.plot(indep_train_axis, np.array(train_accuracies), "g--", label="Train accuracies")
+    if config.matplot_lib_enabled:
 
-        indep_test_axis = np.array(range(batch_size, len(test_losses) * display_iter, display_iter)[:-1] + [training_iters])
+        #for i in range(config.batch_size):
+         #   indep_test_axis.append(i)
+        #indep_test_axis = [i for i in range(config.batch_size)]
+        #indep_test_axis = np.array(indep_test_axis)
 
-        plt.plot(indep_test_axis, np.array(test_losses), "b-", label="Test losses")
-        plt.plot(indep_test_axis, np.array(test_accuracies), "g-", label="Test accuracies")
+        p = PlotUtil("title", indep_test_axis, "x_label", "y_label")
+        y_bundle = []
 
-        plt.title("Training session's progress over iterations")
-        plt.legend(loc='upper right', shadow=True)
-        plt.ylabel('Training Progress (Loss or Accuracy values)')
-        plt.xlabel('Training iteration')
+        y = YaxisBundle(test_losses, "loss", "b")
+        y_bundle.append(y)
 
-        plt.show()
+        y = YaxisBundle(test_accuracies, "accuracy", "g")
+        y_bundle.append(y)
+
+        p.show_plot(y_bundle)
+
+        if config.matplot_lib_for_accuracy:
+            return y_bundle[1]
+        else :
+            return y_bundle[0]
+    return 0
 
 
 

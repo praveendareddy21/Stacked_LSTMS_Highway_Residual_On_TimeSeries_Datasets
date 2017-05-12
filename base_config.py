@@ -46,6 +46,9 @@ class Config(object):
 		self.n_hidden = 0  # nb of neurons inside the neural network
 		self.n_classes = 0 # Final output classes
 
+		self.matplot_lib_enabled = False
+		self.matplot_lib_for_accuracy = True
+
 
 	def print_config(self):
 		print("#####")
