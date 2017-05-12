@@ -48,7 +48,7 @@ class Config(object):
 
 		self.matplot_lib_enabled = False
 		self.matplot_lib_for_accuracy = True
-
+		self.matplot_lib_for_single_ybundle = True
 
 	def print_config(self):
 		print("#####")

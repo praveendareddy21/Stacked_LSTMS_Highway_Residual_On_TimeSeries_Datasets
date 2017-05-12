@@ -372,23 +372,27 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
 
         #p.show_plot(y_bundle)
 
-        if config.matplot_lib_for_accuracy:
-            return y_bundle[1]
-        else :
-            return y_bundle[0]
-    return 0
+        if config.matplot_lib_for_single_ybundle:
+            if config.matplot_lib_for_accuracy:
+                return y_bundle[1]
+            else :
+                return y_bundle[0]
+    return y_bundle
 
 
 
 if __name__ == '__main__':
-    y_bundle = []
-    indep_test_axis = []
-    for i in range(config.batch_size):
-        indep_test_axis.append(i)
-    p = PlotUtil("title", indep_test_axis, "x_label", "y_label")
+    if config.matplot_lib_enabled:    
+        indep_test_axis = []
+        for i in range(config.batch_size):
+            indep_test_axis.append(i)
 
-    y_bundle.append(run_with_config(config))
-    p.show_plot(y_bundle)
+        p = PlotUtil("title", indep_test_axis, "x_label", "y_label")
+        y_bundle = run_with_config(config)
+
+        p.show_plot(y_bundle)
+    else:
+        run_with_config(config)
 
 
 
