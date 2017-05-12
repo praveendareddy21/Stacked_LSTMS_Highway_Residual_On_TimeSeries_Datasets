@@ -32,30 +32,45 @@ def sigmoid(x):
   return 1 / (1 + math.exp(-x))
 
 
-def show_multi_plot():
+def show_multi_plot(y_bundle):
+	p = PlotUtil("title", indep_test_axis, "x_label", "y_label")
+	p.show_plot(y_bundle)
 
+def runner_with_results_output(y_bundle):
 	test_losses = []
 	test_accuracies = []
-
 
 	for i in range(batch_size):
 		test_losses.append(3.5 - 1.6 * sigmoid(i / 10))
 		test_accuracies.append(0.5 + 0.4 * sigmoid(i / 10))
-
-	p = PlotUtil("title", indep_test_axis, "x_label", "y_label")
-	y_bundle = []
 
 	y = YaxisBundle(test_losses, "loss", "b")
 	y_bundle.append(y)
 
 	y = YaxisBundle(test_accuracies, "accuracy", "g")
 	y_bundle.append(y)
+	return y_bundle
 
-	p.show_plot(y_bundle)
+def runner_with_results_output_1(y_bundle):
+	test_losses = []
+	test_accuracies = []
+
+	for i in range(batch_size):
+		test_losses.append(4.5 - 1.6 * sigmoid(i / 10))
+		test_accuracies.append(0.1 + 0.4 * sigmoid(i / 10))
+
+	y = YaxisBundle(test_losses, "loss_1", "b")
+	y_bundle.append(y)
+
+	y = YaxisBundle(test_accuracies, "accuracy_1", "g")
+	y_bundle.append(y)
+	return y_bundle
 
 
 if __name__ == '__main__':
-	show_multi_plot()
+	runner_with_results_output(y_bundle)
+	runner_with_results_output_1(y_bundle)
+	show_multi_plot(y_bundle)
 	exit(0)
 
 	#run_with_config = deep_lstm_model.run_with_config
