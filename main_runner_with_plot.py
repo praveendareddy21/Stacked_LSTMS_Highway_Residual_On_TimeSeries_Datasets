@@ -63,12 +63,16 @@ if __name__ == '__main__':
 	config = highway_lstm_model_plotlib.config
 
 	config.tensor_board_logging_enabled  = False
-	config.matplot_lib_for_accuracy = True
-	config.matplot_lib_enabled = True
 
+	config.matplot_lib_enabled = True
+	config.matplot_lib_for_single_ybundle = True
+	config.matplot_lib_for_accuracy = True
+
+
+	#y_bundle = []
 	#runner_with_results_output(y_bundle)
 	y_bundle.append(run_with_config(config))
-	show_multi_plot(y_bundle, config.batch_size)
+	show_multi_plot(y_bundle, config.training_epochs)
 	exit(0)
 
 

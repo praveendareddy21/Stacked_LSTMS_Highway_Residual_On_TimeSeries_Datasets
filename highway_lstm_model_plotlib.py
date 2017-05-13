@@ -208,7 +208,7 @@ class HighwayConfig(Config):
         self.n_steps = len(X_train[0])  # 128 time_steps per series
 
         # Trainging
-        self.learning_rate = 0.0005
+        self.learning_rate = 0.005
         self.lambda_loss_amount = 0.0015
         self.training_epochs = 300
         self.batch_size = 1500
@@ -222,7 +222,7 @@ class HighwayConfig(Config):
         self.bias_mean = 0.3
         self.weights_stddev = 0.2
         self.n_layers_in_highway = 0
-        self.n_stacked_layers = 1
+        self.n_stacked_layers = 3
         self.also_add_dropout_between_stacked_cells = False
         self.batch_norm_enabled = True
         self.tensor_board_logging_enabled = False
@@ -230,6 +230,7 @@ class HighwayConfig(Config):
         self.tensorboard_cmd = "tensorboard --logdir="+ self.logs_path
         self.matplot_lib_enabled = True
         self.matplot_lib_for_accuracy =True
+        self.matplot_lib_for_single_ybundle=False
 
 
 #config = Config(X_train, X_test)
@@ -377,17 +378,17 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
                 return y_bundle[1]
             else :
                 return y_bundle[0]
-    return y_bundle
+        return y_bundle
 
 
 
 if __name__ == '__main__':
     if config.matplot_lib_enabled:    
         indep_test_axis = []
-        for i in range(config.batch_size):
+        for i in range(config.training_epochs):
             indep_test_axis.append(i)
 
-        p = PlotUtil("title", indep_test_axis, "x_label", "y_label")
+        p = PlotUtil("title", np.array(indep_test_axis), "x_label", "y_label")
         y_bundle = run_with_config(config)
 
         p.show_plot(y_bundle)
