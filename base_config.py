@@ -75,6 +75,8 @@ class Config(object):
 		log_suffix = log_suffix + "/" + "learn:" + str(self.learning_rate)
 		log_suffix = log_suffix + "/" +"stacked_layer:" + str(self.n_stacked_layers)
 		log_suffix = log_suffix + "/" + "epochs:" + str(self.training_epochs)
+		log_suffix = log_suffix + "/" + "batch_norm:" + str(self.batch_norm_enabled)
+		log_suffix = log_suffix + "/" + "lstm_neurons:" + str(self.n_hidden)
 
 		return log_suffix
 
@@ -84,6 +86,9 @@ class Config(object):
 		log_suffix = log_suffix + "|" + "learn:" + str(self.learning_rate)
 		log_suffix = log_suffix + "|" +"stacked_layer:" + str(self.n_stacked_layers)
 		log_suffix = log_suffix + "|" + "epochs:" + str(self.training_epochs)
+		log_suffix = log_suffix + "|" + "batch_norm:" + str(self.batch_norm_enabled)
+		log_suffix = log_suffix + "|" + "lstm_neurons:" + str(self.n_hidden)
+
 
 		return log_suffix
 		#self.random = Random(FLAGS.python_seed)
