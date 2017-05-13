@@ -50,6 +50,8 @@ class Config(object):
 		self.matplot_lib_for_accuracy = True
 		self.matplot_lib_for_single_ybundle = True
 
+		self.model_desc_attched_string  = "base_config"
+
 	def print_config(self):
 		print("#####")
 		print("learning_rate" +" : "+ str(self.learning_rate))
@@ -76,6 +78,14 @@ class Config(object):
 
 		return log_suffix
 
+	def attach_mdoel_desc(self):
+		log_suffix = ""
+		log_suffix = log_suffix + "model:" + str(self.model_name)
+		log_suffix = log_suffix + "|" + "learn:" + str(self.learning_rate)
+		log_suffix = log_suffix + "|" +"stacked_layer:" + str(self.n_stacked_layers)
+		log_suffix = log_suffix + "|" + "epochs:" + str(self.training_epochs)
+
+		return log_suffix
 		#self.random = Random(FLAGS.python_seed)
 		
 		
