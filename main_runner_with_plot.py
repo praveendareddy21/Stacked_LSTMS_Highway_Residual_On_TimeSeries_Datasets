@@ -63,15 +63,28 @@ if __name__ == '__main__':
 	config = highway_lstm_model_plotlib.config
 
 	config.tensor_board_logging_enabled  = False
-
 	config.matplot_lib_enabled = True
 	config.matplot_lib_for_single_ybundle = True
 	config.matplot_lib_for_accuracy = True
+	config.training_epochs = 2
+	config.n_stacked_layers = 1
 
 
-	#y_bundle = []
-	#runner_with_results_output(y_bundle)
 	y_bundle.append(run_with_config(config))
+
+	run_with_config = highway_lstm_model_UCR_dataset.run_with_config
+	config = highway_lstm_model_UCR_dataset.config
+
+	config.tensor_board_logging_enabled  = False
+	config.matplot_lib_enabled = True
+	config.matplot_lib_for_single_ybundle = True
+	config.matplot_lib_for_accuracy = True
+	config.training_epochs = 2
+	config.n_stacked_layers = 1
+
+
+	y_bundle.append(run_with_config(config))
+
 	show_multi_plot(y_bundle, config.training_epochs)
 	exit(0)
 
