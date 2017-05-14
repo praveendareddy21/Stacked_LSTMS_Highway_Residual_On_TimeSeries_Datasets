@@ -225,9 +225,14 @@ class HighwayConfig(Config):
         self.n_stacked_layers = 3
         self.also_add_dropout_between_stacked_cells = False
         self.batch_norm_enabled = True
-        self.tensor_board_logging_enabled = False
-        self.logs_path = "/tmp/LSTM_logs/highway_lstm/"
+
+        self.model_name = "highway_lstm" + "_HAR"
+        self.log_folder_suffix = self.attach_log_suffix()
+        self.logs_path = "/tmp/LSTM_logs/"+self.log_folder_suffix
+
+        self.tensor_board_logging_enabled = True
         self.tensorboard_cmd = "tensorboard --logdir="+ self.logs_path
+        self.model_desc_attched_string = self.attach_mdoel_desc()
         self.matplot_lib_enabled = True
         self.matplot_lib_for_accuracy =True
         self.matplot_lib_for_single_ybundle=False
