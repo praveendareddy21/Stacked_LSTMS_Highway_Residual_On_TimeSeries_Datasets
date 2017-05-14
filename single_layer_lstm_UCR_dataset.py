@@ -4,6 +4,7 @@ from sklearn import metrics
 from sklearn.utils import shuffle
 import numpy as np
 from base_config import Config, YaxisBundle, PlotUtil
+from UCR_time_series_data_handler import  get_dataset_with_series_size
 
 
 
@@ -58,11 +59,27 @@ def LSTM_Network(feature_mat, config):
     # Linear activation
     return tf.matmul(lstm_last_output, config.W['output']) + config.biases['output']
 
+def one_hot_to_int(y):
+    """convert label from dense to one hot
+      argument:
+        label: ndarray dense label ,shape: [sample_num,1]
+      return:
+        one_hot_label: ndarray  one hot, shape: [sample_num,n_class]
+    """
+    # e.g.: [[5], [0], [3]] --> [[0, 0, 0, 0, 0, 1], [1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0]]
 
+    y = y.reshape(len(y))
+    n_values = int(np.max(y)) + 1
+    return np.eye(n_values)[np.array(y, dtype=np.int32)]  # Returns FLOATS
 
 ################################## load data and config ##################################
-
-X_train, y_train, X_test, y_test = get_HAR_data()
+X_train, y_train, X_test, y_test, series_size = get_dataset_with_series_size(dataset='ElectricDevices')
+X_train = X_train.reshape((-1, series_size, 1))
+X_test = X_test.reshape((-1, series_size, 1))
+y_train = y_train.reshape((-1, 1))
+y_test = y_test.reshape((-1, 1))
+y_train = one_hot_to_int(y_train)
+y_test = one_hot_to_int(y_test)
 
 
 class SingleLayerConfig(Config):
@@ -79,17 +96,18 @@ class SingleLayerConfig(Config):
         self.n_steps = len(X_train[0])  # 128 time_steps per series
 
         # Trainging
-        self.learning_rate = 0.0025
+        self.learning_rate = 0.005
         self.lambda_loss_amount = 0.0015
-        self.training_epochs = 2
+        self.training_epochs = 100
         self.batch_size = 1500
 
         # LSTM structure
-        self.n_inputs = len(X_train[0][0])  # == 9 Features count is of 9: three 3D sensors features over time
-        self.n_hidden = 32  # nb of neurons inside the neural network
-        self.n_classes = 6  # Final output classes
+        self.n_inputs = len(X_train[0][0])
+        self.n_hidden = 28 # nb of neurons inside the neural network
+        self.n_classes = len(y_train[0])  # Final output classes
 
-        self.model_name = "single_lstm" + "_HAR"
+
+        self.model_name = "single_lstm_" + "ElectricDevices"
         self.log_folder_suffix = self.attach_log_suffix()
         self.logs_path = "/tmp/LSTM_logs/"+self.log_folder_suffix
 

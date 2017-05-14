@@ -4,7 +4,7 @@ from sklearn import metrics
 from sklearn.utils import shuffle
 import numpy as np
 from base_config import Config, YaxisBundle, PlotUtil
-
+from mnist_data_handler import get_mnist_data_with_time_series_size
 
 
 def single_LSTM_cell(input_hidden_tensor, n_outputs):
@@ -62,7 +62,7 @@ def LSTM_Network(feature_mat, config):
 
 ################################## load data and config ##################################
 
-X_train, y_train, X_test, y_test = get_HAR_data()
+X_train, y_train, X_test, y_test, series_size = get_mnist_data_with_time_series_size()
 
 
 class SingleLayerConfig(Config):
@@ -79,17 +79,18 @@ class SingleLayerConfig(Config):
         self.n_steps = len(X_train[0])  # 128 time_steps per series
 
         # Trainging
-        self.learning_rate = 0.0025
+        self.learning_rate = 0.005
         self.lambda_loss_amount = 0.0015
-        self.training_epochs = 2
+        self.training_epochs = 100
         self.batch_size = 1500
 
         # LSTM structure
-        self.n_inputs = len(X_train[0][0])  # == 9 Features count is of 9: three 3D sensors features over time
-        self.n_hidden = 32  # nb of neurons inside the neural network
-        self.n_classes = 6  # Final output classes
+        self.n_inputs = len(X_train[0][0])
+        self.n_hidden = 28 # nb of neurons inside the neural network
+        self.n_classes = len(y_train[0])  # Final output classes
 
-        self.model_name = "single_lstm" + "_HAR"
+
+        self.model_name = "single_lstm_" + "MNIST"
         self.log_folder_suffix = self.attach_log_suffix()
         self.logs_path = "/tmp/LSTM_logs/"+self.log_folder_suffix
 
