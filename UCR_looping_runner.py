@@ -12,7 +12,6 @@ import lstm_mnist
 
 import deep_lstm_model
 import single_layer_lstm
-import deep_lstm_model_on_ucr_dataset
 import highway_lstm_model
 import residual_lstm_model
 import  deep_lstm_model_UCR_dataset

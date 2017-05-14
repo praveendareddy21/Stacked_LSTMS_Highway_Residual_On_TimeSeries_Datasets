@@ -89,7 +89,7 @@ class SingleLayerConfig(Config):
         self.n_hidden = 32  # nb of neurons inside the neural network
         self.n_classes = 6  # Final output classes
 
-        self.model_name = "single_lstm" + "_electric"
+        self.model_name = "single_lstm" + "_HAR"
         self.log_folder_suffix = self.attach_log_suffix()
         self.logs_path = "/tmp/LSTM_logs/"+self.log_folder_suffix
         self.tensorboard_cmd = "tensorboard --logdir="+ self.logs_path
