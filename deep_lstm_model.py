@@ -163,7 +163,7 @@ class DeepLSTMConfig(Config):
         # Trainging
         self.learning_rate = 0.00025
         self.lambda_loss_amount = 0.0015
-        self.training_epochs = 450
+        self.training_epochs = 300
         self.batch_size = 1500
 
         # LSTM structure
@@ -182,12 +182,20 @@ class DeepLSTMConfig(Config):
         self.bias_mean = 0.3
         self.weights_stddev = 0.2
         self.n_layers_in_highway = 0
-        self.n_stacked_layers = 6
+        self.n_stacked_layers = 3
         self.batch_norm_enabled = True
         self.also_add_dropout_between_stacked_cells = False
+
+        self.model_name = "deep_lstm" + "_HAR"
+        self.log_folder_suffix = self.attach_log_suffix()
+        self.logs_path = "/tmp/LSTM_logs/"+self.log_folder_suffix
+
         self.tensor_board_logging_enabled = True
-        self.logs_path = "/tmp/LSTM_logs/deep_lstm"
         self.tensorboard_cmd = "tensorboard --logdir="+ self.logs_path
+        self.model_desc_attched_string = self.attach_mdoel_desc()
+        self.matplot_lib_enabled = True
+        self.matplot_lib_for_accuracy =True
+        self.matplot_lib_for_single_ybundle=False
 
 
 #config = Config(X_train, X_test)
@@ -197,9 +205,14 @@ config = DeepLSTMConfig()
 def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     tf.reset_default_graph()  # To enable to run multiple things in a loop
     config.print_config()
-    #-----------------------------------
-    # Define parameters for model
-    #-----------------------------------
+
+    if config.matplot_lib_enabled:
+        # To keep track of training's performance
+        test_losses = []
+        test_accuracies = []
+        indep_test_axis = []
+
+
 
     config.W = {
         'hidden': tf.Variable(tf.random_normal([config.n_inputs, config.n_hidden])),
@@ -209,6 +222,10 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
         'hidden': tf.Variable(tf.random_normal([config.n_hidden], mean=1.0)),
         'output': tf.Variable(tf.random_normal([config.n_classes]))
     }
+    #-----------------------------------
+    # Define parameters for model
+    #-----------------------------------
+
 
     print("Some useful info to get an insight on dataset's shape and normalisation:")
     print("features shape, labels shape, each features mean, each features standard deviation")
@@ -222,8 +239,8 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     X = tf.placeholder(tf.float32, [None, config.n_steps, config.n_inputs])
     Y = tf.placeholder(tf.float32, [None, config.n_classes])
 
-    # pred_Y = LSTM_Network(X, config)
     pred_Y = deep_LSTM_network(X, config, 0.85)
+
 
     print "Unregularised variables:"
     for unreg in [tf_var.name for tf_var in tf.trainable_variables() if
@@ -249,7 +266,6 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
         tf.summary.scalar("accuracy", accuracy)
         merged_summary_op = tf.summary.merge_all()
 
-
     # --------------------------------------------
     # step4: Hooray, now train the neural network
     # --------------------------------------------
@@ -266,11 +282,11 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     for i in range(config.training_epochs):
         for start, end in zip(range(0, config.train_count, config.batch_size),
                               range(config.batch_size, config.train_count + 1, config.batch_size)):
-            if config.tensor_board_logging_enabled :
-                _, summary = sess.run([optimizer, merged_summary_op], feed_dict={X: X_train[start:end],Y: y_train[start:end]})
+            if config.tensor_board_logging_enabled:
+                _, summary = sess.run([optimizer, merged_summary_op],
+                                      feed_dict={X: X_train[start:end], Y: y_train[start:end]})
             else:
-                sess.run(optimizer, feed_dict={X: X_train[start:end],Y: y_train[start:end]})
-
+                sess.run(optimizer, feed_dict={X: X_train[start:end], Y: y_train[start:end]})
 
         if config.tensor_board_logging_enabled:
             # Write logs at every iteration
@@ -279,6 +295,12 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
         # Test completely at every epoch: calculate accuracy
         pred_out, accuracy_out, loss_out = sess.run([pred_Y, accuracy, cost], feed_dict={
             X: X_test, Y: y_test})
+
+        if config.matplot_lib_enabled:
+            indep_test_axis.append(i)
+            test_losses.append(loss_out)
+            test_accuracies.append(accuracy_out)
+
         print("traing iter: {},".format(i) + \
               " test accuracy : {},".format(accuracy_out) + \
               " loss : {}".format(loss_out))
@@ -294,5 +316,47 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
         print(config.tensorboard_cmd)
         print("\nThen open http://0.0.0.0:6006/ into your web browser")
 
+    print(config.model_desc_attched_string)
+
+
+    if config.matplot_lib_enabled:
+
+        #for i in range(config.batch_size):
+         #   indep_test_axis.append(i)
+        #indep_test_axis = [i for i in range(config.batch_size)]
+        #indep_test_axis = np.array(indep_test_axis)
+
+        #p = PlotUtil("title", indep_test_axis, "x_label", "y_label")
+        y_bundle = []
+        test_losses = np.array(test_losses)
+        test_accuracies = np.array(test_accuracies)
+
+        y = YaxisBundle(np.array(test_losses), "loss", "b")
+        y_bundle.append(y)
+
+        y = YaxisBundle(np.array(test_accuracies), "accuracy", "g")
+        y_bundle.append(y)
+
+        #p.show_plot(y_bundle)
+
+        if config.matplot_lib_for_single_ybundle:
+            if config.matplot_lib_for_accuracy:
+                return y_bundle[1]
+            else :
+                return y_bundle[0]
+        return y_bundle
+
+
+
 if __name__ == '__main__':
-    run_with_config(config) #, trX, trY, teX, teY)
+    if config.matplot_lib_enabled:
+        indep_test_axis = []
+        for i in range(config.training_epochs):
+            indep_test_axis.append(i)
+
+        p = PlotUtil("title", np.array(indep_test_axis), "x_label", "y_label")
+        y_bundle = run_with_config(config)
+
+        p.show_plot(y_bundle)
+    else:
+        run_with_config(config)
