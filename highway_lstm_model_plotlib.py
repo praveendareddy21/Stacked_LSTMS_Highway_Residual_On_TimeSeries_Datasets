@@ -275,8 +275,8 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
     X = tf.placeholder(tf.float32, [None, config.n_steps, config.n_inputs])
     Y = tf.placeholder(tf.float32, [None, config.n_classes])
 
-    # pred_Y = LSTM_Network(X, config)
     pred_Y = deep_LSTM_network(X, config, 0.85)
+
 
     print "Unregularised variables:"
     for unreg in [tf_var.name for tf_var in tf.trainable_variables() if
@@ -352,6 +352,8 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
         print(config.tensorboard_cmd)
         print("\nThen open http://0.0.0.0:6006/ into your web browser")
 
+    print(config.model_desc_attched_string)
+
 
     if config.matplot_lib_enabled:
 
@@ -383,7 +385,7 @@ def run_with_config(config) : #, X_train, y_train, X_test, y_test):
 
 
 if __name__ == '__main__':
-    if config.matplot_lib_enabled:    
+    if config.matplot_lib_enabled:
         indep_test_axis = []
         for i in range(config.training_epochs):
             indep_test_axis.append(i)
@@ -394,6 +396,8 @@ if __name__ == '__main__':
         p.show_plot(y_bundle)
     else:
         run_with_config(config)
+
+
 
 
 
