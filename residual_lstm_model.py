@@ -349,7 +349,7 @@ if __name__ == '__main__':
         for i in range(config.training_epochs):
             indep_test_axis.append(i)
 
-        p = PlotUtil("title", np.array(indep_test_axis), "x_label", "y_label")
+        p = PlotUtil("Residual LSTM(3 layers) on HAR", np.array(indep_test_axis), "Epoch iterations", "Loss or Accuracy")
         y_bundle = run_with_config(config)
 
         p.show_plot(y_bundle)

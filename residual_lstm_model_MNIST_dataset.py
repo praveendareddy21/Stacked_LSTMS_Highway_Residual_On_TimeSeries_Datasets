@@ -164,7 +164,7 @@ class ResLstmConfig(Config):
         # Trainging
         self.learning_rate = 0.005
         self.lambda_loss_amount = 0.0015
-        self.training_epochs = 300
+        self.training_epochs = 100
         self.batch_size = 1500
 
         # LSTM structure
@@ -174,7 +174,7 @@ class ResLstmConfig(Config):
 
         self.keep_prob_for_dropout = 0.85
         self.bias_mean = 0.3
-        self.weights_stddev = 0.2
+        self.weights_stddev = 0.9
         self.n_layers_in_highway = 0
         self.n_stacked_layers = 4
         self.also_add_dropout_between_stacked_cells = False
@@ -349,9 +349,10 @@ if __name__ == '__main__':
         for i in range(config.training_epochs):
             indep_test_axis.append(i)
 
-        p = PlotUtil("title", np.array(indep_test_axis), "x_label", "y_label")
+        p = PlotUtil("Residual LSTM(3 layers) on MNIST", np.array(indep_test_axis), "Epoch iterations", "Loss or Accuracy")
         y_bundle = run_with_config(config)
 
         p.show_plot(y_bundle)
     else:
         run_with_config(config)
+
