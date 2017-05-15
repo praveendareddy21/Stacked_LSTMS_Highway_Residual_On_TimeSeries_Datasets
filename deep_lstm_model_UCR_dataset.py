@@ -205,9 +205,9 @@ class DeepLSTMOnUCRConfig(Config):
         }
         self.keep_prob_for_dropout = 0.85
         self.bias_mean = 0.3
-        self.weights_stddev = 0.2
+        self.weights_stddev = 0.9
         self.n_layers_in_highway = 3
-        self.n_stacked_layers = 1
+        self.n_stacked_layers = 3
         self.batch_norm_enabled = True
         self.also_add_dropout_between_stacked_cells = False
 
@@ -379,7 +379,7 @@ if __name__ == '__main__':
         for i in range(config.training_epochs):
             indep_test_axis.append(i)
 
-        p = PlotUtil("title", np.array(indep_test_axis), "x_label", "y_label")
+        p = PlotUtil("Deep LSTM(3 layers) on UCR ElectricDevices", np.array(indep_test_axis), "Epoch iterations", "Loss or Accuracy")
         y_bundle = run_with_config(config)
 
         p.show_plot(y_bundle)

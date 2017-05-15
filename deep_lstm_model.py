@@ -161,7 +161,7 @@ class DeepLSTMConfig(Config):
         self.n_steps = len(X_train[0])  # 128 time_steps per series
 
         # Trainging
-        self.learning_rate = 0.00025
+        self.learning_rate = 0.005
         self.lambda_loss_amount = 0.0015
         self.training_epochs = 300
         self.batch_size = 1500
@@ -354,7 +354,7 @@ if __name__ == '__main__':
         for i in range(config.training_epochs):
             indep_test_axis.append(i)
 
-        p = PlotUtil("title", np.array(indep_test_axis), "x_label", "y_label")
+        p = PlotUtil("Stacked LSTM(3 layers) on HAR", np.array(indep_test_axis), "Epoch iterations", "Loss or Accuracy")
         y_bundle = run_with_config(config)
 
         p.show_plot(y_bundle)
