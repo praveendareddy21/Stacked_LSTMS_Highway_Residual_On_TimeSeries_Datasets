@@ -78,3 +78,20 @@ if __name__ == '__main__':
 						config.learning_rate = learning_rate
 						config.decay = decay
 						run_with_config(config) #, trX, trY, teX, teY)
+						
+
+# Plots
+
+
+
+![har result](single_har_bn.png)
+![har result](stacked_HAR.png)
+![har result](high_har_bn.png)
+![har result](res_har_bn.png)
+
+
+![ucr result](single_twopng)
+![ucr result](stacked_two.png)
+![ucr result](high_two_bn.png)
+![ucr result](res_two_bn.png)
+
